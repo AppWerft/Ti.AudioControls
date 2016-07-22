@@ -32,3 +32,6 @@ LockScreenControl.setImage();
 LockScreenControl.setProgress();
 
 ```
+
+![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
+
