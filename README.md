@@ -8,6 +8,8 @@ This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player)
 ```javascript
 var AudioControlModule = require("de.appwerft.audiocontrol");
 
+AudioControlModule.enableHeadsetKeyboard();
+
 var LockScreenControl = AudioControlModule.createLockscreenControl({
     artist : "Michael Jackson",
     title : "Awesome track",
