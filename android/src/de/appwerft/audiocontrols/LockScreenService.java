@@ -2,71 +2,94 @@ package de.appwerft.audiocontrols;
 
 import java.util.Timer;
 
-import org.appcelerator.kroll.common.Log;
+import org.appcelerator.titanium.TiApplication;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
-import android.os.Handler;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.os.ResultReceiver;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.WindowManager;
-import android.widget.RelativeLayout;
+import android.widget.Button;
 
 public class LockScreenService extends Service {
 	Timer timer;
 	WindowManager.LayoutParams layoutParams;
 
+	ResultReceiver resultReceiver;
+
 	View audiocontrolView;
 	WindowManager winMgr;
-	Handler mHandler;
 	Context context;
 	int scale = -1;
 	int level = -1;
 	int charging = 0;
 
-	private BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			sendBroadcast(intent);
-		}
-	};
-
 	@Override
 	public void onCreate() {
-		Log.v("Nav Service: ",
-				"{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{CREATED");
-		// Start up the thread running the service. Note that we create a
-		// separate thread because the service normally runs in the process's
-		// main thread, which we don't want to block. We also make it
-		// background priority so CPU-intensive work will not disrupt our UI.
-		/*
-		 * allowedApps.add("com.sapientnitro.lcinstore2");//LC
-		 * allowedApps.add("com.adobe.reader");//acrobat
-		 * allowedApps.add("com.dynamixsoftware.printershare");//printer share
-		 * allowedApps.add("my.handrite.prem");//HandRite Pro
-		 */
-		mHandler = new Handler();
-		// batMan = new BatteryManager();
 		winMgr = (WindowManager) getSystemService(WINDOW_SERVICE);
-		// cTime = new Time(Time.getCurrentTimezone());
-
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+
+		/* for back communication */
+		resultReceiver = intent.getParcelableExtra("receiver");
+
+		context = TiApplication.getInstance().getApplicationContext();
+		Resources res = context.getResources();
+		String pn = context.getPackageName();
+		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 		if (audiocontrolView == null) {
-			audiocontrolView = new RelativeLayout(getApplicationContext());
-			Context context = getApplicationContext();
-			String packageName = context.getPackageName();
-			Resources resources = context.getResources();
+			// we get a context from app for getting the view from XML:
+			int layoutId = context.getResources().getIdentifier("content_main",
+					"layout", pn);
+			audiocontrolView = (View) inflater.inflate(layoutId, null);
+
+			// getting references to buttons:
+			final int rewindcontrolId, forwardcontrolId, playcontrolId;
+			Button rewindButton = (Button) inflater.inflate(
+					rewindcontrolId = res.getIdentifier("rewindcontrol",
+							"layout", pn), null);
+			Button forwardButton = (Button) inflater.inflate(
+					forwardcontrolId = res.getIdentifier("rewindcontrol",
+							"layout", pn), null);
+			Button playButton = (Button) inflater.inflate(
+					playcontrolId = res.getIdentifier("rewindcontrol",
+							"layout", pn), null);
+			OnClickListener buttonListener = new View.OnClickListener() {
+				@Override
+				public void onClick(View clicksource) {
+					int buttonId = clicksource.getId();
+					String msg = "";
+					if (buttonId == rewindcontrolId)
+						msg = "rewind";
+
+					if (buttonId == forwardcontrolId) {
+						msg = "forward";
+					}
+					if (buttonId == playcontrolId) {
+						msg = "play";
+					}
+					Bundle bundle = new Bundle();
+					bundle.putString("lockscreen", msg);
+					resultReceiver.send(100, bundle);
+				}
+			};
+			rewindButton.setOnClickListener(buttonListener);
+			forwardButton.setOnClickListener(buttonListener);
+			playButton.setOnClickListener(buttonListener);
 
 			// http://stackoverflow.com/questions/19846541/what-is-windowmanager-in-android
+			// adding to window stack:
 			layoutParams = new WindowManager.LayoutParams(
 					WindowManager.LayoutParams.FILL_PARENT, 50,
 					// This allows the view to be displayed over the status bar
@@ -100,7 +123,6 @@ public class LockScreenService extends Service {
 
 	@Override
 	public IBinder onBind(Intent intent) {
-		// We don't provide binding, so return null
 		return null;
 	}
 

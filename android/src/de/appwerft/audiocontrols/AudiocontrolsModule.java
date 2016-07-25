@@ -8,10 +8,13 @@ import org.appcelerator.titanium.TiApplication;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.ResultReceiver;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
 	public static String rootActivityClassName = "";
+	static ResultReceiver resultReceiver;
+	Intent intent;
 
 	public AudiocontrolsModule() {
 		super();
@@ -19,6 +22,14 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.onAppCreate
 	public static void onAppCreate(TiApplication app) {
+		resultReceiver = new ResultReceiver(null);
+	}
+
+	@Override
+	public void onDestroy(Activity activity) {
+		TiApplication.getInstance().stopService(intent);
+		super.onDestroy(activity);
+
 	}
 
 	@Kroll.method
@@ -34,11 +45,13 @@ public class AudiocontrolsModule extends KrollModule {
 			image = opts.getString("image");
 		}
 		try {
-			Intent intent = new Intent(TiApplication.getAppCurrentActivity(),
+			intent = new Intent(TiApplication.getAppCurrentActivity(),
 					LockScreenService.class);
 			intent.putExtra("title", title);
 			intent.putExtra("artist", artist);
 			intent.putExtra("image", image);
+			/* for back communication */
+			intent.putExtra("receiver", resultReceiver);
 			TiApplication.getInstance().startService(intent);
 		} catch (Exception ex) {
 			Log.d("AudioControls", "Exception caught:" + ex);

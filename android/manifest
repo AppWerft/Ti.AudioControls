@@ -16,3 +16,4 @@ moduleid: de.appwerrft.audiocontrols
 guid: 9d5f5ef0-45d8-4167-bcba-062e9b9c2b37
 platform: android
 minsdk: 5.2.0.GA
+respackage: de.appwerft.audiocontrols
