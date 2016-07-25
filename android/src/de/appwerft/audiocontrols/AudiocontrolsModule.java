@@ -47,6 +47,7 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void setContent(KrollDict opts) {
+		// http://stackoverflow.com/questions/15346647/android-passing-variables-to-an-already-running-service
 		this.createLockScreenControl(opts);
 	}
 

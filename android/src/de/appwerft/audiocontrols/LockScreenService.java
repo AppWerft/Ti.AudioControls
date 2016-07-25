@@ -32,7 +32,7 @@ public class LockScreenService extends Service {
 	private BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			sendBroadcast();
+			sendBroadcast(intent);
 		}
 	};
 
@@ -63,6 +63,7 @@ public class LockScreenService extends Service {
 		if (audiocontrolView == null) {
 			// create View
 			audiocontrolView = new RelativeLayout(getApplicationContext());
+			// http://stackoverflow.com/questions/19846541/what-is-windowmanager-in-android
 			layoutParams = new WindowManager.LayoutParams(
 					WindowManager.LayoutParams.FILL_PARENT, 50,
 					// This allows the view to be displayed over the status bar
