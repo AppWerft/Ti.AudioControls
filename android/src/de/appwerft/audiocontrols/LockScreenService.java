@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,7 +16,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 public class LockScreenService extends Service {
 	Timer timer;
@@ -24,7 +24,7 @@ public class LockScreenService extends Service {
 	View audiocontrolView;
 	WindowManager winMgr;
 	Handler mHandler;
-
+	Context context;
 	int scale = -1;
 	int level = -1;
 	int charging = 0;
@@ -61,8 +61,11 @@ public class LockScreenService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (audiocontrolView == null) {
-			// create View
 			audiocontrolView = new RelativeLayout(getApplicationContext());
+			Context context = getApplicationContext();
+			String packageName = context.getPackageName();
+			Resources resources = context.getResources();
+
 			// http://stackoverflow.com/questions/19846541/what-is-windowmanager-in-android
 			layoutParams = new WindowManager.LayoutParams(
 					WindowManager.LayoutParams.FILL_PARENT, 50,
