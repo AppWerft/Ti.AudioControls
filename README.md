@@ -10,7 +10,7 @@ var AudioControlModule = require("de.appwerft.audiocontrol");
 
 AudioControlModule.enableHeadsetKeyboard();
 
-var LockScreenControl = AudioControlModule.createRemoteControl({
+var RemoteControl = AudioControlModule.createRemoteControl({
     artist : "Michael Jackson",
     title : "Awesome track",
     image : "http://",
@@ -26,10 +26,10 @@ var LockScreenControl = AudioControlModule.createRemoteControl({
     
     }
 });
-LockScreenControl.setTitle();
-LockScreenControl.setArtist();
-LockScreenControl.setImage();
-LockScreenControl.setProgress();
+remoteControl.setTitle();
+remoteControl.setArtist();
+remoteControl.setImage();
+remoteControl.setProgress();
 
 ```
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
