@@ -104,7 +104,7 @@ public class LockScreenService extends Service {
 			layoutParams.gravity = Gravity.TOP;
 			layoutParams.y = 50;
 			audiocontrolView.setBackgroundColor(0xffff0000);
-			windowManager.addView(audiocontrolView, layoutParams);
+			// windowManager.addView(audiocontrolView, layoutParams);
 
 			// If we get killed, after returning from here, restart
 		} else {
@@ -123,7 +123,7 @@ public class LockScreenService extends Service {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-				// if screen is turn off show the textview
+				// if screen is turn off show the controlview
 				if (!isShowing) {
 					windowManager.addView(audiocontrolView, layoutParams);
 					isShowing = true;
@@ -132,7 +132,7 @@ public class LockScreenService extends Service {
 
 			else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
 				// Handle resuming events if user is present/screen is unlocked
-				// remove the textview immediately
+				// remove the audiocontrolview immediately
 				if (isShowing) {
 					windowManager.removeViewImmediate(audiocontrolView);
 					isShowing = false;

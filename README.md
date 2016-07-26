@@ -10,7 +10,7 @@ var AudioControlModule = require("de.appwerft.audiocontrol");
 
 AudioControlModule.enableHeadsetKeyboard();
 
-var LockScreenControl = AudioControlModule.createLockscreenControl({
+var LockScreenControl = AudioControlModule.createRemoteControl({
     artist : "Michael Jackson",
     title : "Awesome track",
     image : "http://",
