@@ -32,6 +32,13 @@ LockScreenControl.setImage();
 LockScreenControl.setProgress();
 
 ```
-
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
+
+
+In older devices it opens a view over lockscreen  – in new devices an interactive notifiaction.
+
+<img src="https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/lsr.png" width="600">
+
+[Details here (on bottom of page)](https://developer.android.com/about/versions/android-5.0-changes.html#Lockscreen+widget+support+removed)
+
 
