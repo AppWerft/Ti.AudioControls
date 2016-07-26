@@ -4,6 +4,7 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -22,8 +23,9 @@ public class LockScreenService extends Service {
 	final String LCAT = "LockAudioScreen 😇😇😇";
 	WindowManager.LayoutParams layoutParams;
 	ResultReceiver resultReceiver;
+	private boolean isShowing = false;
 	View audiocontrolView;
-	WindowManager winMgr;
+	WindowManager windowManager;
 	Context context;
 
 	public LockScreenService() {
@@ -34,7 +36,7 @@ public class LockScreenService extends Service {
 	@Override
 	public void onCreate() {
 		Log.d(LCAT, "onCreate");
-		winMgr = (WindowManager) getSystemService(WINDOW_SERVICE);
+		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -107,7 +109,7 @@ public class LockScreenService extends Service {
 			layoutParams.gravity = Gravity.TOP;
 			layoutParams.y = 50;
 			audiocontrolView.setBackgroundColor(0xffff0000);
-			winMgr.addView(audiocontrolView, layoutParams);
+			windowManager.addView(audiocontrolView, layoutParams);
 
 			// If we get killed, after returning from here, restart
 		} else {
@@ -122,9 +124,31 @@ public class LockScreenService extends Service {
 		return null;
 	}
 
+	public class LockScreenStateReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+				// if screen is turn off show the textview
+				if (!isShowing) {
+					windowManager.addView(audiocontrolView, layoutParams);
+					isShowing = true;
+				}
+			}
+
+			else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
+				// Handle resuming events if user is present/screen is unlocked
+				// remove the textview immediately
+				if (isShowing) {
+					windowManager.removeViewImmediate(audiocontrolView);
+					isShowing = false;
+				}
+			}
+		}
+	}
+
 	@Override
 	public void onDestroy() {
-		winMgr.removeView(audiocontrolView);
+		windowManager.removeView(audiocontrolView);
 	}
 
 }
