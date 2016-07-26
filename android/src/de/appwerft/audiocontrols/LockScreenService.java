@@ -97,13 +97,8 @@ public class LockScreenService extends Service {
 					// window
 					WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 							| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-							|
-							// this is to enable the notification to recieve
-							// touch
-							// events
-							WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
-							// Draws over status bar
-							WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+							| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+							| WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
 
 					PixelFormat.TRANSPARENT);
 			layoutParams.gravity = Gravity.TOP;
