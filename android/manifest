@@ -12,8 +12,8 @@ copyright: Copyright (c) 2016 by
 
 # these should not be edited
 name: Audiocontrols
-moduleid: de.appwerrft.audiocontrols
+moduleid: de.appwerft.audiocontrols
 guid: 9d5f5ef0-45d8-4167-bcba-062e9b9c2b37
 platform: android
-minsdk: 5.2.0.GA
+minsdk: 3.5.1.GA
 respackage: de.appwerft.audiocontrols

@@ -1,10 +1,9 @@
 package de.appwerft.audiocontrols;
 
-import java.util.Timer;
-
+import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
-import android.app.Service;
+import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -19,31 +18,31 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
 
-public class LockScreenService extends Service {
-	Timer timer;
+public class LockScreenService extends IntentService {
+	final String LCAT = "LockAudioScreen 😇😇😇";
 	WindowManager.LayoutParams layoutParams;
-
 	ResultReceiver resultReceiver;
-
 	View audiocontrolView;
 	WindowManager winMgr;
 	Context context;
-	int scale = -1;
-	int level = -1;
-	int charging = 0;
+
+	public LockScreenService(String name) {
+		super(name);
+		Log.d(LCAT, "CONSTRUCTOR	");
+	}
 
 	@Override
 	public void onCreate() {
+		Log.d(LCAT, "onCreate");
 		winMgr = (WindowManager) getSystemService(WINDOW_SERVICE);
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-
+		Log.d(LCAT, "inside service on start of onStartCommand");
 		/* for back communication */
 		resultReceiver = intent.getParcelableExtra("receiver");
-
 		context = TiApplication.getInstance().getApplicationContext();
 		Resources res = context.getResources();
 		String pn = context.getPackageName();
@@ -72,13 +71,10 @@ public class LockScreenService extends Service {
 					String msg = "";
 					if (buttonId == rewindcontrolId)
 						msg = "rewind";
-
-					if (buttonId == forwardcontrolId) {
+					if (buttonId == forwardcontrolId)
 						msg = "forward";
-					}
-					if (buttonId == playcontrolId) {
+					if (buttonId == playcontrolId)
 						msg = "play";
-					}
 					Bundle bundle = new Bundle();
 					bundle.putString("lockscreen", msg);
 					resultReceiver.send(100, bundle);
@@ -129,5 +125,11 @@ public class LockScreenService extends Service {
 	@Override
 	public void onDestroy() {
 		winMgr.removeView(audiocontrolView);
+	}
+
+	@Override
+	protected void onHandleIntent(Intent arg0) {
+		// TODO Auto-generated method stub
+
 	}
 }
