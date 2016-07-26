@@ -11,7 +11,7 @@
 		<application>
 			<service
             android:name=".LockScreenService"
-            android:exported="false"/>
+         />
 		</application>	
 	</android>
 	<mobileweb>

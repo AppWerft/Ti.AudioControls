@@ -3,7 +3,7 @@ package de.appwerft.audiocontrols;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -18,7 +18,7 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
 
-public class LockScreenService extends IntentService {
+public class LockScreenService extends Service {
 	final String LCAT = "LockAudioScreen 😇😇😇";
 	WindowManager.LayoutParams layoutParams;
 	ResultReceiver resultReceiver;
@@ -26,8 +26,8 @@ public class LockScreenService extends IntentService {
 	WindowManager winMgr;
 	Context context;
 
-	public LockScreenService(String name) {
-		super(name);
+	public LockScreenService() {
+		super();
 		Log.d(LCAT, "CONSTRUCTOR	");
 	}
 
@@ -127,9 +127,4 @@ public class LockScreenService extends IntentService {
 		winMgr.removeView(audiocontrolView);
 	}
 
-	@Override
-	protected void onHandleIntent(Intent arg0) {
-		// TODO Auto-generated method stub
-
-	}
 }

@@ -7,11 +7,13 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.ResultReceiver;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
+	Context context;
 	public static String rootActivityClassName = "";
 	final String LCAT = "LockAudioScreen ♛♛♛";
 	static ResultReceiver resultReceiver;
@@ -35,7 +37,7 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void createLockScreenControl(KrollDict opts) {
-		Log.d(LCAT, opts.toString());
+		context = TiApplication.getInstance().getApplicationContext();
 		String title = "", artist = "", image = "";
 		if (opts != null && opts.containsKeyAndNotNull("title")) {
 			title = opts.getString("title");
@@ -47,18 +49,24 @@ public class AudiocontrolsModule extends KrollModule {
 			image = opts.getString("image");
 		}
 		try {
-			lockscreenService = new Intent();
-			lockscreenService.setClassName(
-					TiApplication.getAppCurrentActivity(),
-					"LockScreenService.class");
+			// lockscreenService = new Intent(
+			// TiApplication.getAppCurrentActivity(),
+			// LockScreenService.class);
+
+			Intent lockscreenService = new Intent();
+			String pn = context.getPackageName();
+			lockscreenService.setAction(pn + ".LockScreenService");
+			lockscreenService.setPackage(pn);
+
 			lockscreenService.putExtra("title", title);
 			lockscreenService.putExtra("artist", artist);
 			lockscreenService.putExtra("image", image);
-			lockscreenService.setAction(Intent.ACTION_VIEW);
 			/* for back communication */
-			lockscreenService.putExtra("receiver", resultReceiver);
-			TiApplication.getInstance().startService(lockscreenService);
-			Log.d(LCAT, "Service for Lockcreen will started");
+			// lockscreenService.putExtra("receiver", resultReceiver);
+			context.startService(lockscreenService);
+			Log.d(LCAT,
+					pn + ".LockScreenService try to start with "
+							+ opts.toString());
 		} catch (Exception ex) {
 			Log.d(LCAT, "Exception caught:" + ex);
 		}
