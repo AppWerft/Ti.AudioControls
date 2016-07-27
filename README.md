@@ -3,14 +3,16 @@
 
 This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player) by headset, lockscreen and/or notification bar.
 
+It is still in work.
+
 ##Interface
 
 ```javascript
 var AudioControlModule = require("de.appwerft.audiocontrol");
 
 AudioControlModule.enableHeadsetKeyboard();
-
-var RemoteControl = AudioControlModule.createRemoteControl({
+// audioControl is singleton, therefore we use module for it:
+AudioControlModule.createRemoteControl({
     artist : "Michael Jackson",
     title : "Awesome track",
     image : "http://",
@@ -26,10 +28,11 @@ var RemoteControl = AudioControlModule.createRemoteControl({
     
     }
 });
-remoteControl.setTitle();
-remoteControl.setArtist();
-remoteControl.setImage();
-remoteControl.setProgress();
+AudioControlModule.updateRemoteControl({
+    artist : "Michael Jackson",
+    title : "Awesome track",
+    image : "http://",
+});
 
 ```
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)

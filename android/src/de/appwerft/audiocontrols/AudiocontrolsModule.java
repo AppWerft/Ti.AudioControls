@@ -131,15 +131,13 @@ public class AudiocontrolsModule extends KrollModule {
 			// for preL we open a view over lockscreen:
 			Log.d(LCAT, " < Build.VERSION_CODES.LOLLIPOP");
 			try {
-				Intent lockscreenService = new Intent();
-				lockscreenService.setAction(pn + ".LockScreenService");
-				lockscreenService.setPackage(pn);
-				lockscreenService.putExtra("title", title);
-				lockscreenService.putExtra("artist", artist);
-				lockscreenService.putExtra("image", image);
+				Intent intent = new Intent(context, LockScreenService.class);
+				intent.putExtra("title", title);
+				intent.putExtra("artist", artist);
+				intent.putExtra("image", image);
 				/* for back communication */
 				// lockscreenService.putExtra("receiver", resultReceiver);
-				context.startService(lockscreenService);
+				context.startService(intent);
 				Log.d(LCAT,
 						pn + ".LockScreenService try to start with "
 								+ opts.toString());
