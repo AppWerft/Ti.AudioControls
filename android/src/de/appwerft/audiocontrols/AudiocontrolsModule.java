@@ -18,7 +18,6 @@ import android.os.ResultReceiver;
 import android.support.v4.app.NotificationCompat;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.RemoteViews;
 
@@ -128,19 +127,16 @@ public class AudiocontrolsModule extends KrollModule {
 			});
 
 		} else {
-			// for preL we open a view over lockscreen:
+			// for preLollipop we open a view over lockscreen:
 			Log.d(LCAT, " < Build.VERSION_CODES.LOLLIPOP");
 			try {
 				Intent intent = new Intent(context, LockScreenService.class);
 				intent.putExtra("title", title);
 				intent.putExtra("artist", artist);
 				intent.putExtra("image", image);
-				/* for back communication */
-				// lockscreenService.putExtra("receiver", resultReceiver);
 				context.startService(intent);
-				Log.d(LCAT,
-						pn + ".LockScreenService try to start with "
-								+ opts.toString());
+				Log.d(LCAT, "Service " + intent.toString()
+						+ " try to start with " + opts.toString());
 			} catch (Exception ex) {
 				Log.d(LCAT, "Exception caught:" + ex);
 			}
