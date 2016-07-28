@@ -23,39 +23,29 @@ public class LockScreenService extends Service {
 	ResultReceiver resultReceiver;
 	private BroadcastReceiver lockScreenStateReceiver;
 	private boolean isShowing = false;
-	View audiocontrolView;
+	AudioControlWidget audiocontrolWidget;
 	WindowManager windowManager;
-	Context context;
+	Context ctx;
+	Resources res;
+	String packageName;
 
 	public LockScreenService() {
 		super();
-		context = TiApplication.getInstance().getApplicationContext();
+		ctx = TiApplication.getInstance().getApplicationContext();
+		res = ctx.getResources();
+		packageName = ctx.getPackageName();
 		Log.d(LCAT, "CONSTRUCTOR	");
 	}
 
 	@Override
 	public void onCreate() {
-		windowManager = (WindowManager) context
-				.getSystemService(WINDOW_SERVICE);
+		super.onCreate();
+		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		Log.d(LCAT, "inside service on start of onCreate");
-		Resources res = context.getResources();
-		String packageName = context.getPackageName();
-		LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-		// we get a context from app for getting the view from XML:
-		int layoutId = context.getResources().getIdentifier(
-				"remoteaudiocontrol", "layout", context.getPackageName());
-		Log.d(LCAT, "layoutId=" + layoutId);
-		audiocontrolView = (View) inflater.inflate(layoutId, null);
-
+		audiocontrolWidget = new AudioControlWidget(ctx);
+		audiocontrolWidget.setCover("http://lorempixel.com/200/200/");
 		// getting references to buttons:
 		/*
-		 * final int rewindcontrolId, forwardcontrolId, playcontrolId; Button
-		 * rewindButton = (Button) inflater.inflate( rewindcontrolId =
-		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
-		 * Button forwardButton = (Button) inflater.inflate( forwardcontrolId =
-		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
-		 * Button playButton = (Button) inflater.inflate( playcontrolId =
-		 * res.getIdentifier("playcontrol", "layout", packageName), null);
 		 * OnClickListener buttonListener = new View.OnClickListener() {
 		 * 
 		 * @Override public void onClick(View clicksource) { int buttonId =
@@ -75,13 +65,11 @@ public class LockScreenService extends Service {
 				WindowManager.LayoutParams.WRAP_CONTENT,
 				WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
 				WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-						| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
 						| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-						| WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
-						| WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-				PixelFormat.TRANSPARENT);
-		layoutParams.gravity = Gravity.TOP;
-		layoutParams.y = 150;
+						| WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+						| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+				PixelFormat.TRANSLUCENT);
+		layoutParams.gravity = Gravity.BOTTOM;
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
 		filter.addAction(Intent.ACTION_USER_PRESENT);
@@ -105,16 +93,16 @@ public class LockScreenService extends Service {
 			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
 				// if screen is turn off show the controlview
 				if (!isShowing) {
-					windowManager.addView(audiocontrolView, layoutParams);
+					windowManager.addView(audiocontrolWidget, layoutParams);
 					isShowing = true;
 				}
 			}
 
 			else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
 				// Handle resuming events if user is present/screen is unlocked
-				// remove the audiocontrolview immediately
+				// remove the audiocontrolWidget immediately
 				if (isShowing) {
-					windowManager.removeViewImmediate(audiocontrolView);
+					windowManager.removeViewImmediate(audiocontrolWidget);
 					isShowing = false;
 				}
 			}
@@ -123,7 +111,7 @@ public class LockScreenService extends Service {
 
 	@Override
 	public void onDestroy() {
-		windowManager.removeView(audiocontrolView);
+		windowManager.removeView(audiocontrolWidget);
 	}
 
 }

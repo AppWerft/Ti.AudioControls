@@ -3,13 +3,18 @@
 xmlns:android="http://schemas.android.com/apk/res/android"
 android:id="@+id/remoteaudiocontrol"
 android:layout_width="match_parent"
- android:layout_height="130dp"
- android:gravity="center"
+android:layout_height="150dp"
 android:paddingLeft="10dp"
 android:paddingRight="10dp"
 android:paddingTop="10dp"
 android:paddingBottom="10dp"
 android:background="#555">
+<ImageView
+	android:layout_width="100dp"
+	android:layout_height="100dp"
+	android:id="@+id/cover"
+	android:src="@drawable/lem"
+	android:layout_centerVertical="true" />
 	<TextView
 	android:layout_width="wrap_content"
 	android:layout_height="wrap_content"
@@ -35,15 +40,10 @@ android:background="#555">
 	android:textColor="#fff"
 	android:textSize="18dp"
 	android:paddingLeft="10dp"
-	android:layout_centerVertical="true"
-	android:layout_toRightOf="@+id/coverimage"
-	android:layout_toEndOf="@+id/coverimage" />
-	<ImageView
-	android:layout_width="100dp"
-	android:layout_height="100dp"
-	android:id="@+id/coverimage"
-	android:src="@drawable/lem"
-	android:layout_centerVertical="true" />
+	android:layout_toRightOf="@+id/cover"
+	android:layout_toEndOf="@+id/cover" />
+	
+	
 	<RelativeLayout
 	android:layout_width="160dp"
 	android:layout_height="wrap_content"
@@ -68,8 +68,8 @@ android:background="#555">
 		android:scaleX="2"
 		android:scaleY="2"
 		android:layout_centerVertical="true"
-		android:layout_toLeftOf="@+id/startcontrol"
-		android:layout_toStartOf="@+id/startcontrol"
+		android:layout_toLeftOf="@+id/playcontrol"
+		android:layout_toStartOf="@+id/playcontrol"
 		android:layout_marginEnd="10dp" />
 		<ImageButton
 		android:layout_width="wrap_content"
@@ -93,7 +93,7 @@ android:background="#555">
 		android:src="@android:drawable/ic_media_ff"
 		android:scaleX="1.8"
 		android:scaleY="1.8"
-		android:layout_alignTop="@+id/startcontrol"
+		android:layout_alignTop="@+id/playcontrol"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentEnd="true"
 		android:clickable="true"

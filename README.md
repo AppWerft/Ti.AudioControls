@@ -34,6 +34,14 @@ AudioControlModule.updateRemoteControl({
     image : "http://",
 });
 
+var onKeypressed = function(_e) {
+    console.log(_e);
+};
+
+AudioControlModule.addEventListener("remotekeyboard", inKeypressed);
+AudioControlModule.removeEventListener("remotekeyboard", inKeypressed);
+
+
 ```
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
 
