@@ -69,6 +69,11 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	@Kroll.method
+	public void updateRemoteAudioControl(KrollDict opts) {
+		this.createRemoteAudioControl(opts);
+	}
+
+	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
 		context = TiApplication.getInstance().getApplicationContext();
 		String title = "", artist = "", image = "";

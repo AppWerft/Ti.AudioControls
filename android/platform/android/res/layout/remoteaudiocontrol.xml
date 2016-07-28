@@ -13,7 +13,7 @@ android:background="#555">
 	android:layout_width="100dp"
 	android:layout_height="100dp"
 	android:id="@+id/cover"
-	android:src="@drawable/lem"
+	android:src="@drawable/defaultimage"
 	android:layout_centerVertical="true" />
 	<TextView
 	android:layout_width="wrap_content"

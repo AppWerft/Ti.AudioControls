@@ -10,7 +10,7 @@ It is still in work.
 ```javascript
 var AudioControlModule = require("de.appwerft.audiocontrol");
 
-AudioControlModule.enableHeadsetKeyboard();
+
 // audioControl is singleton, therefore we use module for it:
 AudioControlModule.createRemoteControl({
     artist : "Michael Jackson",

@@ -46,6 +46,13 @@ public class LockScreenService extends Service {
 		audiocontrolWidget.setCover("http://lorempixel.com/200/200/");
 		// getting references to buttons:
 		/*
+		 * final int rewindcontrolId, forwardcontrolId, playcontrolId; Button
+		 * rewindButton = (Button) inflater.inflate( rewindcontrolId =
+		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
+		 * Button forwardButton = (Button) inflater.inflate( forwardcontrolId =
+		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
+		 * Button playButton = (Button) inflater.inflate( playcontrolId =
+		 * res.getIdentifier("playcontrol", "layout", packageName), null);
 		 * OnClickListener buttonListener = new View.OnClickListener() {
 		 * 
 		 * @Override public void onClick(View clicksource) { int buttonId =

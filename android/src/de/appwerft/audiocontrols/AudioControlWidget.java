@@ -1,5 +1,8 @@
 package de.appwerft.audiocontrols;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
@@ -51,7 +54,20 @@ public class AudioControlWidget extends RelativeLayout {
 	}
 
 	public void setCover(String imageUrl) {
-		Picasso.with(ctx).load(imageUrl).into(coverView);
+		if (coverView == null) {
+			Log.e(LCAT, "CoverView is null");
+			return;
+
+		}
+		Log.d(LCAT, "imageUrl=" + imageUrl);
+		// only for testing for right URL syntax:
+		try {
+			@SuppressWarnings("unused")
+			URL url = new URL(imageUrl);
+			Picasso.with(ctx).load(imageUrl).into(coverView);
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
 
 	}
 
