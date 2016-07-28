@@ -57,10 +57,7 @@ public class AudioControlWidget extends RelativeLayout {
 		if (coverView == null) {
 			Log.e(LCAT, "CoverView is null");
 			return;
-
 		}
-		Log.d(LCAT, "imageUrl=" + imageUrl);
-		// only for testing for right URL syntax:
 		try {
 			@SuppressWarnings("unused")
 			URL url = new URL(imageUrl);
