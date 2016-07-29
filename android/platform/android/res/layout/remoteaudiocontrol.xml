@@ -3,93 +3,80 @@
 xmlns:android="http://schemas.android.com/apk/res/android"
 android:id="@+id/remoteaudiocontrol"
 android:layout_width="match_parent"
-android:layout_height="150dp"
-android:paddingLeft="10dp"
-android:paddingRight="10dp"
-android:paddingTop="10dp"
-android:paddingBottom="10dp"
-android:background="#555">
-<ImageView
-	android:layout_width="100dp"
-	android:layout_height="100dp"
-	android:id="@+id/cover"
+android:layout_height="match_parent"
+android:paddingLeft="5dp"
+android:paddingRight="0dp"
+android:paddingTop="0dp"
+android:paddingBottom="0dp"
+android:background="#222">
+	<ImageView
+	android:layout_width="95dp"
+	android:layout_height="95dp"
+	android:id="@+id/coverimage"
 	android:src="@drawable/defaultimage"
-	android:layout_centerVertical="true" />
+	android:paddingTop="10dp" />
 	<TextView
 	android:layout_width="wrap_content"
-	android:layout_height="wrap_content"
-	android:text="Titel"
+	android:layout_height="36dp"
 	android:id="@+id/title"
 	android:ellipsize="marquee"
 	android:textStyle="bold"
 	android:textSize="24dp"
 	android:textColor="#fff"
-	android:paddingLeft="10dp"
-	android:paddingTop="10dp"
-	android:layout_above="@+id/artist"
-	android:layout_toRightOf="@+id/coverimage"
-	android:layout_toEndOf="@+id/coverimage" />
+	android:fontFamily="DroidSans"
+	android:paddingLeft="105dp"
+	android:paddingTop="5dp" />
 	<TextView
 	android:layout_width="wrap_content"
 	android:layout_height="wrap_content"
 	android:text="Konstnär"
 	android:id="@+id/artist"
-	android:textStyle="bold"
 	android:ellipsize="marquee"
 	android:fontFamily="DroidSans"
 	android:textColor="#fff"
-	android:textSize="18dp"
-	android:paddingLeft="10dp"
-	android:layout_toRightOf="@+id/cover"
-	android:layout_toEndOf="@+id/cover" />
-	
-	
+	android:textSize="16dp"
+	android:paddingLeft="105dp"
+	android:paddingTop="40dp" />
 	<RelativeLayout
 	android:layout_width="160dp"
-	android:layout_height="wrap_content"
+	android:layout_height="55dp"
 	android:id="@+id/ctrlbox"
 	android:paddingRight="0dp"
-	android:paddingBottom="0dp"
+	android:paddingBottom="10dp"
 	android:layout_alignParentBottom="true"
 	android:clickable="false"
 	android:layout_alignParentRight="true"
 	android:layout_alignParentEnd="false"
-	android:layout_alignWithParentIfMissing="false"
-	android:layout_below="@+id/artist"
-	android:isScrollContainer="true"
-	android:layout_toEndOf="@+id/artist">
+	>
 		<ImageButton
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:id="@+id/rewindcontrol"
+		android:id="@+id/prevcontrol"
 		android:background="@android:color/transparent"
 		android:src="@android:drawable/ic_media_previous"
 		android:clickable="true"
-		android:scaleX="2"
-		android:scaleY="2"
+		android:scaleX="1.8"
+		android:scaleY="1.8"
 		android:layout_centerVertical="true"
-		android:layout_toLeftOf="@+id/playcontrol"
-		android:layout_toStartOf="@+id/playcontrol"
-		android:layout_marginEnd="10dp" />
-		<ImageButton
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:id="@+id/playcontrol"
-		android:src="@android:drawable/ic_media_pause"
-		android:background="@android:color/transparent"
-		android:scaleX="2"
-		android:scaleY="2"
-		android:layout_centerVertical="true"
-		android:paddingLeft="10dp"
-		android:layout_alignTop="@+id/rewindcontrol"
-		android:layout_centerHorizontal="true"
+		android:layout_marginStart="10dp"
 		
 		 />
 		<ImageButton
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
+		android:id="@+id/playcontrol"
+		
+		android:src="@android:drawable/ic_media_pause"
 		android:background="@android:color/transparent"
-		android:id="@+id/forwardcontrol"
+		android:scaleX="1.8"
+		android:scaleY="1.8"
+		android:layout_centerVertical="true"
+		android:layout_centerHorizontal="true" />
+		<ImageButton
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:background="@android:color/transparent"
+		android:id="@+id/nextcontrol"
 		android:src="@android:drawable/ic_media_ff"
 		android:scaleX="1.8"
 		android:scaleY="1.8"

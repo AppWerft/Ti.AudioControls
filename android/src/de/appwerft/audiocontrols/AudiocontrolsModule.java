@@ -23,8 +23,9 @@ import android.widget.RemoteViews;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
-	Context context;
+	Context ctx;
 	public static String rootActivityClassName = "";
+	AudioControlWidget audioControlWidget;
 	final String LCAT = "LockAudioScreen ♛♛♛";
 	final int NOTIFICATION_ID = 1;
 	static ResultReceiver resultReceiver;
@@ -48,23 +49,14 @@ public class AudiocontrolsModule extends KrollModule {
 
 	private RemoteViews getAudioControlView() {
 		// Using RemoteViews to bind custom layouts into Notification
-		int layoutId = context.getResources().getIdentifier(
-				"remoteaudiocontrol", "layout", context.getPackageName());
+		int layoutId = ctx.getResources().getIdentifier("remoteaudiocontrol",
+				"layout", ctx.getPackageName());
 		Log.d(LCAT, "layoutId = " + layoutId);
 		if (layoutId == 0) {
 			return null;
 		}
 		RemoteViews customenotificationView = new RemoteViews(
-				context.getPackageName(), layoutId);
-
-		// Locate and set the Image into customnotificationtext.xml ImageViews
-		// notificationView.setImageViewResource(R.id.imagenotileft,
-		// R.drawable.ic_launcher);
-
-		// Locate and set the Text into customnotificationtext.xml TextViews
-		// notificationView.setTextViewText(R.id.title, getTitle());
-		// notificationView.setTextViewText(R.id.text, getText());
-
+				ctx.getPackageName(), layoutId);
 		return customenotificationView;
 	}
 
@@ -75,7 +67,7 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
-		context = TiApplication.getInstance().getApplicationContext();
+		ctx = TiApplication.getInstance().getApplicationContext();
 		String title = "", artist = "", image = "";
 		if (opts != null && opts.containsKeyAndNotNull("title")) {
 			title = opts.getString("title");
@@ -86,23 +78,22 @@ public class AudiocontrolsModule extends KrollModule {
 		if (opts != null && opts.containsKeyAndNotNull("image")) {
 			image = opts.getString("image");
 		}
-		Resources res = context.getResources();
-		String pn = context.getPackageName();
+		Resources res = ctx.getResources();
+		String pn = ctx.getPackageName();
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			// Vorbild:
 			// http://stackoverflow.com/questions/23222063/android-custom-notification-layout-with-remoteviews
 			// http://www.laurivan.com/android-notifications-with-custom-layout/
 			Log.d(LCAT, " >= Build.VERSION_CODES.LOLLIPOP");
-			Intent intent = new Intent(context, LockScreenService.class);
-			PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+			Intent intent = new Intent(ctx, LockScreenService.class);
+			PendingIntent contentIntent = PendingIntent.getActivity(ctx, 0,
 					intent, PendingIntent.FLAG_UPDATE_CURRENT);
 			int iconId = res.getIdentifier("notification_icon", "drawable", pn);
 			NotificationCompat.Builder builder = new NotificationCompat.Builder(
-					context).setSmallIcon(iconId)
-					.setContentIntent(contentIntent).setContentText("")
-					.setAutoCancel(false);
+					ctx).setSmallIcon(iconId).setContentIntent(contentIntent)
+					.setContentText("").setAutoCancel(false);
 
-			NotificationManager notificationManager = (NotificationManager) context
+			NotificationManager notificationManager = (NotificationManager) ctx
 					.getSystemService(Context.NOTIFICATION_SERVICE);
 
 			Notification notification;
@@ -118,7 +109,7 @@ public class AudiocontrolsModule extends KrollModule {
 
 			notificationManager.notify(NOTIFICATION_ID, notification);
 
-			LayoutInflater inflater = (LayoutInflater) context
+			LayoutInflater inflater = (LayoutInflater) ctx
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
 			Button playButton = (Button) inflater.inflate(
@@ -135,11 +126,11 @@ public class AudiocontrolsModule extends KrollModule {
 			// for preLollipop we open a view over lockscreen:
 			Log.d(LCAT, " < Build.VERSION_CODES.LOLLIPOP");
 			try {
-				Intent intent = new Intent(context, LockScreenService.class);
+				Intent intent = new Intent(ctx, LockScreenService.class);
 				intent.putExtra("title", title);
 				intent.putExtra("artist", artist);
 				intent.putExtra("image", image);
-				context.startService(intent);
+				ctx.startService(intent);
 				Log.d(LCAT, "Service " + intent.toString()
 						+ " try to start with " + opts.toString());
 			} catch (Exception ex) {

@@ -1,6 +1,5 @@
 package de.appwerft.audiocontrols;
 
-import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
 import android.app.Service;
@@ -13,8 +12,6 @@ import android.graphics.PixelFormat;
 import android.os.IBinder;
 import android.os.ResultReceiver;
 import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.WindowManager;
 
 public class LockScreenService extends Service {
@@ -23,7 +20,8 @@ public class LockScreenService extends Service {
 	ResultReceiver resultReceiver;
 	private BroadcastReceiver lockScreenStateReceiver;
 	private boolean isShowing = false;
-	AudioControlWidget audiocontrolWidget;
+	AudioControlWidget audioControlWidget;
+
 	WindowManager windowManager;
 	Context ctx;
 	Resources res;
@@ -34,49 +32,38 @@ public class LockScreenService extends Service {
 		ctx = TiApplication.getInstance().getApplicationContext();
 		res = ctx.getResources();
 		packageName = ctx.getPackageName();
-		Log.d(LCAT, "CONSTRUCTOR	");
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		audioControlWidget = new AudioControlWidget(ctx);
+		audioControlWidget.updateContent("http://lorempixel.com/120/120/cats/",
+				"Eden", "Stanisław Lem");
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-		Log.d(LCAT, "inside service on start of onCreate");
-		audiocontrolWidget = new AudioControlWidget(ctx);
-		audiocontrolWidget.setCover("http://lorempixel.com/200/200/");
-		// getting references to buttons:
-		/*
-		 * final int rewindcontrolId, forwardcontrolId, playcontrolId; Button
-		 * rewindButton = (Button) inflater.inflate( rewindcontrolId =
-		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
-		 * Button forwardButton = (Button) inflater.inflate( forwardcontrolId =
-		 * res.getIdentifier("rewindcontrol", "layout", packageName), null);
-		 * Button playButton = (Button) inflater.inflate( playcontrolId =
-		 * res.getIdentifier("playcontrol", "layout", packageName), null);
-		 * OnClickListener buttonListener = new View.OnClickListener() {
-		 * 
-		 * @Override public void onClick(View clicksource) { int buttonId =
-		 * clicksource.getId(); String msg = ""; if (buttonId ==
-		 * rewindcontrolId) msg = "rewind"; if (buttonId == forwardcontrolId)
-		 * msg = "forward"; if (buttonId == playcontrolId) msg = "play"; Bundle
-		 * bundle = new Bundle(); bundle.putString("lockscreen", msg);
-		 * resultReceiver.send(100, bundle); } };
-		 * rewindButton.setOnClickListener(buttonListener);
-		 * forwardButton.setOnClickListener(buttonListener);
-		 * playButton.setOnClickListener(buttonListener);
-		 */
-		// http://stackoverflow.com/questions/19846541/what-is-windowmanager-in-android
+
 		// adding to window stack:
+		final int flags =
+		/* WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE */
+		/* | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL */
+		/* | */WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+				| WindowManager.LayoutParams.FLAG_FULLSCREEN
+				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+		/* | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH */
+		;
+
+		final int type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+		int WIDTH = 160;
 		layoutParams = new WindowManager.LayoutParams(
-				WindowManager.LayoutParams.WRAP_CONTENT,
-				WindowManager.LayoutParams.WRAP_CONTENT,
-				WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-				WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-						| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-						| WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-						| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+				WindowManager.LayoutParams.FILL_PARENT, WIDTH, type, flags,
 				PixelFormat.TRANSLUCENT);
+		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 		layoutParams.gravity = Gravity.BOTTOM;
+		layoutParams.alpha = 0.95f;
+		layoutParams.x = 0;
+		layoutParams.y = 0;
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
 		filter.addAction(Intent.ACTION_USER_PRESENT);
@@ -85,7 +72,6 @@ public class LockScreenService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		resultReceiver = intent.getParcelableExtra("receiver");
 		return START_STICKY;
 	}
 
@@ -100,16 +86,14 @@ public class LockScreenService extends Service {
 			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
 				// if screen is turn off show the controlview
 				if (!isShowing) {
-					windowManager.addView(audiocontrolWidget, layoutParams);
+					windowManager.addView(audioControlWidget, layoutParams);
 					isShowing = true;
 				}
-			}
-
-			else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
+			} else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
 				// Handle resuming events if user is present/screen is unlocked
-				// remove the audiocontrolWidget immediately
+				// remove the audioControlContainer immediately
 				if (isShowing) {
-					windowManager.removeViewImmediate(audiocontrolWidget);
+					windowManager.removeViewImmediate(audioControlWidget);
 					isShowing = false;
 				}
 			}
@@ -118,7 +102,7 @@ public class LockScreenService extends Service {
 
 	@Override
 	public void onDestroy() {
-		windowManager.removeView(audiocontrolWidget);
+		windowManager.removeView(audioControlWidget);
 	}
 
 }
