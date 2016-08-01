@@ -3,9 +3,8 @@ package de.appwerft.audiocontrols;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.appcelerator.kroll.common.Log;
-
 import android.content.Context;
+import android.content.Intent;
 import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -60,7 +59,6 @@ public class AudioControlWidget extends RelativeLayout {
 				.findViewById(playCtrlId = getResId("playcontrol", "id"));
 		this.nextCtrl = (ImageButton) container
 				.findViewById(nextCtrlId = getResId("nextcontrol", "id"));
-
 		this.playCtrl.setOnClickListener(buttonListener);
 		this.prevCtrl.setOnClickListener(buttonListener);
 		this.nextCtrl.setOnClickListener(buttonListener);
@@ -88,11 +86,14 @@ public class AudioControlWidget extends RelativeLayout {
 				isPlaying = !isPlaying;
 
 			}
-			Log.d(LCAT, "audioControler pressed  >>>>>>>>>>>>: " + msg + "   "
-					+ isPlaying);
 			Vibrator v = (Vibrator) ctx
 					.getSystemService(Context.VIBRATOR_SERVICE);
 			v.vibrate(50);
+			Intent intent = new Intent();
+			intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+			intent.setAction(ctx.getPackageName());
+			intent.putExtra("audiocontrolercmd", msg);
+			ctx.sendBroadcast(intent);
 			/*
 			 * Bundle bundle = new Bundle(); bundle.putString("lockscreen",
 			 * msg); // resultReceiver.send(100, bundle);

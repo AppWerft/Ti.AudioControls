@@ -1,6 +1,7 @@
 package de.appwerft.audiocontrols;
 
 import org.appcelerator.kroll.KrollDict;
+import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
@@ -10,12 +11,15 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.ResultReceiver;
 import android.support.v4.app.NotificationCompat;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -24,34 +28,46 @@ import android.widget.RemoteViews;
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
 	Context ctx;
+	private IntentFilter intentFilterForMediaButton;
 	public static String rootActivityClassName = "";
 	AudioControlWidget audioControlWidget;
 	final String LCAT = "LockAudioScreen ♛♛♛";
 	final int NOTIFICATION_ID = 1;
-	static ResultReceiver resultReceiver;
-	Intent lockscreenService;
+	private Intent lockscreenService;
+	KrollFunction onKeypressedCallback;
+
+	private RemoteControlReceiver mediakeyListener;
+	private AudioControlWidgetReceiver audioControlWidgetReceiver;
 
 	public AudiocontrolsModule() {
 		super();
+		mediakeyListener = new RemoteControlReceiver();
+		intentFilterForMediaButton = new IntentFilter(
+				Intent.ACTION_MEDIA_BUTTON);
+		intentFilterForMediaButton
+				.addAction("android.intent.action.ACTION_MEDIA_BUTTON");
+		intentFilterForMediaButton.setPriority(10000);
+		audioControlWidgetReceiver = new AudioControlWidgetReceiver();
 	}
 
 	@Kroll.onAppCreate
 	public static void onAppCreate(TiApplication app) {
-		resultReceiver = new ResultReceiver(null);
+
 	}
 
 	@Override
 	public void onDestroy(Activity activity) {
 		TiApplication.getInstance().stopService(lockscreenService);
+		ctx.unregisterReceiver(mediakeyListener);
+		ctx.unregisterReceiver(audioControlWidgetReceiver);
 		super.onDestroy(activity);
 
 	}
 
-	private RemoteViews getAudioControlView() {
+	private RemoteViews audioControlRemoteViews() {
 		// Using RemoteViews to bind custom layouts into Notification
 		int layoutId = ctx.getResources().getIdentifier("remoteaudiocontrol",
 				"layout", ctx.getPackageName());
-		Log.d(LCAT, "layoutId = " + layoutId);
 		if (layoutId == 0) {
 			return null;
 		}
@@ -97,24 +113,18 @@ public class AudiocontrolsModule extends KrollModule {
 					.getSystemService(Context.NOTIFICATION_SERVICE);
 
 			Notification notification;
-
 			notification = builder.build();
-
 			// important: call this after building
 			// (http://stackoverflow.com/questions/21237495/create-custom-big-notifications)
-			notification.bigContentView = getAudioControlView();
+			notification.bigContentView = audioControlRemoteViews();
 
 			// for making sticky
 			notification.flags |= Notification.FLAG_NO_CLEAR;
-
 			notificationManager.notify(NOTIFICATION_ID, notification);
-
 			LayoutInflater inflater = (LayoutInflater) ctx
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-
 			Button playButton = (Button) inflater.inflate(
 					res.getIdentifier("playcontrol", "layout", pn), null);
-
 			playButton.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View v) {
@@ -122,21 +132,39 @@ public class AudiocontrolsModule extends KrollModule {
 				}
 			});
 
-		} else {
-			// for preLollipop we open a view over lockscreen:
-			Log.d(LCAT, " < Build.VERSION_CODES.LOLLIPOP");
-			try {
-				Intent intent = new Intent(ctx, LockScreenService.class);
-				intent.putExtra("title", title);
-				intent.putExtra("artist", artist);
-				intent.putExtra("image", image);
-				ctx.startService(intent);
-				Log.d(LCAT, "Service " + intent.toString()
-						+ " try to start with " + opts.toString());
-			} catch (Exception ex) {
-				Log.d(LCAT, "Exception caught:" + ex);
-			}
 		}
+		/* creating a AudioControlOverlay over lockscreen */
+		try {
+			/* starting of service for it */
+			Intent intent = new Intent(ctx, LockScreenService.class);
+			intent.putExtra("title", title);
+			intent.putExtra("artist", artist);
+			intent.putExtra("image", image);
+			ctx.startService(intent);
+			Log.d(LCAT, "Service " + intent.toString() + " try to start with "
+					+ opts.toString());
+			/* registering of broadcastreceiver for results */
+			IntentFilter filter = new IntentFilter(ctx.getPackageName());
+			ctx.registerReceiver(audioControlWidgetReceiver, filter);
+
+		} catch (Exception ex) {
+			Log.d(LCAT, "Exception caught:" + ex);
+		}
+
+	}
+
+	@Kroll.method
+	public void addEventListener(String eventname, KrollFunction callback) {
+		if (eventname != null && callback != null) {
+			onKeypressedCallback = callback;
+			ctx.registerReceiver(mediakeyListener, intentFilterForMediaButton);
+		}
+
+	}
+
+	@Kroll.method
+	public void removeEventListener(String eventname) {
+		ctx.unregisterReceiver(mediakeyListener);
 	}
 
 	public void onStartStop(View view) {
@@ -169,6 +197,40 @@ public class AudiocontrolsModule extends KrollModule {
 						.getSimpleName();
 		Log.d(LCAT, "Module started");
 		super.onStart(activity);
+	}
+
+	// http://stackoverflow.com/questions/9056814/how-do-i-intercept-button-presses-on-the-headset-in-android
+	private class RemoteControlReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context ctx, Intent intent) {
+			if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+				KeyEvent event = (KeyEvent) intent
+						.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+				if (event == null) {
+					return;
+				}
+				// if (event.getAction() == KeyEvent.ACTION_DOWN) {
+				KrollDict dict = new KrollDict();
+				dict.put("keycode", event.getKeyCode());
+				onKeypressedCallback.call(getKrollObject(), dict);
+				// }
+			}
+		}
+	}
+
+	/* with this receiver we read the events from controlUI */
+	private class AudioControlWidgetReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context ctx, Intent intent) {
+			final String audiocontrolercmd;
+			if (intent.getStringExtra("audiocontrolercmd") != null) {
+				audiocontrolercmd = intent.getStringExtra("audiocontrolercmd");
+				KrollDict dict = new KrollDict();
+				dict.put("keycode", audiocontrolercmd);
+				onKeypressedCallback.call(getKrollObject(), dict);
+				// }
+			}
+		}
 	}
 
 }

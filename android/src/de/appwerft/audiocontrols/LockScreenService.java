@@ -42,28 +42,18 @@ public class LockScreenService extends Service {
 		audioControlWidget.updateContent("http://lorempixel.com/120/120/cats/",
 				"Eden", "Stanisław Lem");
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-
-		// adding to window stack:
-		final int flags =
-		/* WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE */
-		/* | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL */
-		/* | */WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
 				| WindowManager.LayoutParams.FLAG_FULLSCREEN
 				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-		/* | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH */
-		;
-
+				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 		final int type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
-		int WIDTH = 160;
+		final int WIDTH = 160;
 		layoutParams = new WindowManager.LayoutParams(
 				WindowManager.LayoutParams.FILL_PARENT, WIDTH, type, flags,
 				PixelFormat.TRANSLUCENT);
 		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 		layoutParams.gravity = Gravity.BOTTOM;
 		layoutParams.alpha = 0.95f;
-		layoutParams.x = 0;
-		layoutParams.y = 0;
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
 		filter.addAction(Intent.ACTION_USER_PRESENT);
@@ -72,6 +62,10 @@ public class LockScreenService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		audioControlWidget
+				.updateContent(intent.getStringExtra("image"),
+						intent.getStringExtra("title"),
+						intent.getStringExtra("artist"));
 		return START_STICKY;
 	}
 
@@ -90,8 +84,6 @@ public class LockScreenService extends Service {
 					isShowing = true;
 				}
 			} else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
-				// Handle resuming events if user is present/screen is unlocked
-				// remove the audioControlContainer immediately
 				if (isShowing) {
 					windowManager.removeViewImmediate(audioControlWidget);
 					isShowing = false;
@@ -104,7 +96,6 @@ public class LockScreenService extends Service {
 	public void onDestroy() {
 		windowManager.removeView(audioControlWidget);
 	}
-
 }
 
 //	

@@ -13,6 +13,13 @@
 			<service
             android:name="de.appwerft.audiocontrols.LockScreenService"
          />
+         
+         <receiver android:name=".RemoteControlReceiver" >
+ 		  <intent-filter android:priority="1000000000000000" >
+       		 <action android:name="android.intent.action.MEDIA_BUTTON" />
+    </intent-filter>
+</receiver>
+         
 		</application>	
 	</android>
 	<mobileweb>
