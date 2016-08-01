@@ -1,6 +1,7 @@
 package de.appwerft.audiocontrols;
 
 import org.appcelerator.titanium.TiApplication;
+import org.appcelerator.titanium.TiProperties;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -18,6 +19,7 @@ public class LockScreenService extends Service {
 	final String LCAT = "LockAudioScreen 😇😇😇";
 	WindowManager.LayoutParams layoutParams;
 	ResultReceiver resultReceiver;
+	private TiProperties appProperties;
 	private BroadcastReceiver lockScreenStateReceiver;
 	private boolean isShowing = false;
 	AudioControlWidget audioControlWidget;
@@ -39,8 +41,6 @@ public class LockScreenService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		audioControlWidget = new AudioControlWidget(ctx);
-		audioControlWidget.updateContent("http://lorempixel.com/120/120/cats/",
-				"Eden", "Stanisław Lem");
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
 				| WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -52,7 +52,12 @@ public class LockScreenService extends Service {
 				WindowManager.LayoutParams.FILL_PARENT, WIDTH, type, flags,
 				PixelFormat.TRANSLUCENT);
 		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-		layoutParams.gravity = Gravity.BOTTOM;
+
+		appProperties = TiApplication.getInstance().getAppProperties();
+		String positionString = appProperties.getString(
+				"PLAYER_VERTICAL_POSITION", "TOP");
+		layoutParams.gravity = (positionString == "TOP") ? Gravity.TOP
+				: Gravity.BOTTOM;
 		layoutParams.alpha = 0.95f;
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);

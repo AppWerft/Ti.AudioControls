@@ -3,9 +3,12 @@ package de.appwerft.audiocontrols;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.appcelerator.titanium.TiApplication;
+
 import android.content.Context;
 import android.content.Intent;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
@@ -24,8 +27,8 @@ public class AudioControlWidget extends RelativeLayout {
 	ImageButton prevCtrl;
 	ImageButton nextCtrl;
 	Boolean isPlaying;
-	int playCtrlId, nextCtrlId, prevCtrlId;
-	Context ctx;
+	int playCtrlId, nextCtrlId, prevCtrlId, placeholderId;
+	Context ctx;// = TiApplication.getInstance().getApplicationContext();
 	final String LCAT = "LockAudioScreen ♛♛♛";
 
 	private int getResId(String name, String type) {
@@ -62,6 +65,7 @@ public class AudioControlWidget extends RelativeLayout {
 		this.playCtrl.setOnClickListener(buttonListener);
 		this.prevCtrl.setOnClickListener(buttonListener);
 		this.nextCtrl.setOnClickListener(buttonListener);
+		this.placeholderId = getResId("placeholder", "drawable");
 		this.addView(container);
 	}
 
@@ -93,6 +97,7 @@ public class AudioControlWidget extends RelativeLayout {
 			intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
 			intent.setAction(ctx.getPackageName());
 			intent.putExtra("audiocontrolercmd", msg);
+			Log.d(LCAT, "try to send a message to KrollModule " + msg);
 			ctx.sendBroadcast(intent);
 			/*
 			 * Bundle bundle = new Bundle(); bundle.putString("lockscreen",
@@ -102,15 +107,19 @@ public class AudioControlWidget extends RelativeLayout {
 	};
 
 	public void updateContent(String imageUrl, String title, String artist) {
-		try {
-			@SuppressWarnings("unused")
-			URL url = new URL(imageUrl);
-			Picasso.with(ctx).load(imageUrl).into(this.coverView);
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		this.titleView.setText(title);
-		this.artistView.setText(artist);
+		if (this.placeholderId > 0) {
+			try {
+				@SuppressWarnings("unused")
+				URL url = new URL(imageUrl);
+				Picasso.with(ctx).load(imageUrl).placeholder(placeholderId)
+						.into(this.coverView);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+			this.titleView.setText(title);
+			this.artistView.setText(artist);
+		} else
+			Log.e(LCAT, "cannot resolve placeholder.png");
 	}
 
 	public void setTitle(String title) {
