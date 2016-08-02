@@ -54,9 +54,9 @@ public class LockScreenService extends Service {
 		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 
 		appProperties = TiApplication.getInstance().getAppProperties();
-		String positionString = appProperties.getString(
+		String verticalAlign = appProperties.getString(
 				"PLAYER_VERTICAL_POSITION", "TOP");
-		layoutParams.gravity = (positionString == "TOP") ? Gravity.TOP
+		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
 				: Gravity.BOTTOM;
 		layoutParams.alpha = 0.95f;
 		lockScreenStateReceiver = new LockScreenStateReceiver();

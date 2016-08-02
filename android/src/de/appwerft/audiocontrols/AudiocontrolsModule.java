@@ -34,7 +34,6 @@ public class AudiocontrolsModule extends KrollModule {
 	final int WIDGET_POSITION_TOP = 0;
 	@Kroll.constant
 	final int WIDGET_POSITION_BOTTOM = 1;
-	private int verticalPosition = WIDGET_POSITION_BOTTOM;
 	Context ctx;
 	private IntentFilter intentFilterForMediaButton;
 	public static String rootActivityClassName = "";
@@ -44,11 +43,13 @@ public class AudiocontrolsModule extends KrollModule {
 	private Intent lockscreenService;
 	KrollFunction onKeypressedCallback = null;
 	private RemoteControlReceiver mediakeyListener;
+	private NotificationReceiver notificationListener;
 	private AudioControlWidgetReceiver audioControlWidgetReceiver;
 	Boolean LOCKSCREENVIEWENABLED = true;
-	Boolean NOTIFICATIONVIEWENABLED = false;
+	Boolean NOTIFICATIONVIEWENABLED = true;
 	private String title, artist, image;
 	Boolean notificationbuilt = false;
+	AudioControlNotification audioControlNotification;
 
 	public AudiocontrolsModule() {
 		super();
@@ -71,22 +72,13 @@ public class AudiocontrolsModule extends KrollModule {
 		TiApplication.getInstance().stopService(lockscreenService);
 		ctx.unregisterReceiver(mediakeyListener);
 		ctx.unregisterReceiver(audioControlWidgetReceiver);
+		ctx.unregisterReceiver(notificationListener);
+
 		super.onDestroy(activity);
 
 	}
 
-	private RemoteViews audioControlRemoteViews() {
-		// Using RemoteViews to bind custom layouts into Notification
-		int layoutId = ctx.getResources().getIdentifier("remoteaudiocontrol",
-				"layout", ctx.getPackageName());
-		if (layoutId == 0) {
-			return null;
-		}
-		RemoteViews customenotificationView = new RemoteViews(
-				ctx.getPackageName(), layoutId);
-		return customenotificationView;
-	}
-
+	/* read all paramters from JS-side and save into vars in this class */
 	private void getOptions(KrollDict opts) {
 		if (opts != null && opts.containsKeyAndNotNull("title")) {
 			title = opts.getString("title");
@@ -97,69 +89,20 @@ public class AudiocontrolsModule extends KrollModule {
 		if (opts != null && opts.containsKeyAndNotNull("image")) {
 			image = opts.getString("image");
 		}
+		/* callback for buttons */
 		if (opts != null && opts.containsKeyAndNotNull("onKeypressed")) {
 			Object cb = opts.get("onKeypressed");
 			if (cb instanceof KrollFunction) {
 				onKeypressedCallback = (KrollFunction) cb;
 			}
 		}
-		if (opts != null && opts.containsKeyAndNotNull("verticalPosition")) {
-			verticalPosition = opts.getInt("verticalPosition");
-		}
-
+		/* both kinds of UI */
 		if (opts != null && opts.containsKeyAndNotNull("lockscreen")) {
 			LOCKSCREENVIEWENABLED = opts.getBoolean("lockscreen");
 		}
 		if (opts != null && opts.containsKeyAndNotNull("notification")) {
 			NOTIFICATIONVIEWENABLED = opts.getBoolean("notification");
 		}
-	}
-
-	private void updateNotification() {
-
-	}
-
-	private void createNotification() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-			return;
-		ctx = TiApplication.getInstance().getApplicationContext();
-		Resources res = ctx.getResources();
-		String pn = ctx.getPackageName();
-		// Vorbild:
-		// http://stackoverflow.com/questions/23222063/android-custom-notification-layout-with-remoteviews
-		// http://www.laurivan.com/android-notifications-with-custom-layout/
-		Log.d(LCAT, " ===============> createNotification");
-		Intent intent = new Intent(ctx, LockScreenService.class);
-		PendingIntent contentIntent = PendingIntent.getActivity(ctx, 0, intent,
-				PendingIntent.FLAG_UPDATE_CURRENT);
-		int iconId = res.getIdentifier("notification_icon", "drawable", pn);
-		NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx)
-				.setSmallIcon(iconId).setContentIntent(contentIntent)
-				.setContentText("").setAutoCancel(false);
-
-		NotificationManager notificationManager = (NotificationManager) ctx
-				.getSystemService(Context.NOTIFICATION_SERVICE);
-
-		Notification notification;
-		notification = builder.build();
-		// important: call this after building
-		// (http://stackoverflow.com/questions/21237495/create-custom-big-notifications)
-		notification.bigContentView = audioControlRemoteViews();
-
-		// for making sticky
-		notification.flags |= Notification.FLAG_NO_CLEAR;
-		notificationManager.notify(NOTIFICATION_ID, notification);
-		LayoutInflater inflater = (LayoutInflater) ctx
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		Button playButton = (Button) inflater.inflate(
-				res.getIdentifier("playcontrol", "layout", pn), null);
-		playButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Log.d(LCAT, ">>>>>>>>>><<<<<<<");
-			}
-		});
-		notificationbuilt = true;
 	}
 
 	@Kroll.method
@@ -169,14 +112,23 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
+
 		this.getOptions(opts);
 		if (NOTIFICATIONVIEWENABLED == true) {
-			Log.d(LCAT, "NOTIFICATIONVIEWENABLED ////////");
 			if (notificationbuilt == false) {
-				this.createNotification();
+				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+					return;
+				ctx = TiApplication.getInstance().getApplicationContext();
+				audioControlNotification = new AudioControlNotification(ctx);
+				notificationbuilt = true;
 			} else {
-				this.updateNotification();
+				audioControlNotification.updateContent("", "", "");
 			}
+			notificationListener = new NotificationReceiver();
+			IntentFilter filter = new IntentFilter(ctx.getPackageName());
+			ctx.registerReceiver(notificationListener, filter);
+			// ctx.registerReceiver(NotificationReceiver);
+
 		}
 		if (LOCKSCREENVIEWENABLED == true) {
 			try {
@@ -186,7 +138,6 @@ public class AudiocontrolsModule extends KrollModule {
 				intent.putExtra("title", title);
 				intent.putExtra("artist", artist);
 				intent.putExtra("image", image);
-				intent.putExtra("verticalPosition", verticalPosition);
 				ctx.startService(intent);
 				/* registering of broadcastreceiver for results */
 				IntentFilter filter = new IntentFilter(ctx.getPackageName());
@@ -282,6 +233,18 @@ public class AudiocontrolsModule extends KrollModule {
 							"onKeypressedCallback is null or not Krollfunction "
 									+ onKeypressedCallback.toString());
 				}
+			}
+		}
+	}
+
+	private class NotificationReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals("de.appwerft.audiocontrols.play")) {
+			} else if (intent.getAction().equals(
+					"de.appwerft.audiocontrols.next")) {
+			} else if (intent.getAction().equals(
+					"de.appwerft.audiocontrols.prev")) {
 			}
 		}
 	}

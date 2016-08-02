@@ -48,8 +48,8 @@ public class AudioControlWidget extends RelativeLayout {
 		this.ctx = ctx;
 		LayoutInflater inflater = (LayoutInflater) ctx
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		container = inflater.inflate(getResId("remoteaudiocontrol", "layout"),
-				null);
+		container = inflater.inflate(
+				getResId("remoteaudiocontrol_lockscreen", "layout"), null);
 		this.coverView = (ImageView) container.findViewById(getResId(
 				"coverimage", "id"));
 		this.artistView = (TextView) container.findViewById(getResId("artist",
