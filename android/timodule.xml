@@ -1,35 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ti:module xmlns:ti="http://ti.appcelerator.org" xmlns:android="http://schemas.android.com/apk/res/android">
 	<!--
-		Similar to tiapp.xml, but contains module/platform specific
-		configuration in <iphone>, <android>, and <mobileweb> sections
+	Similar to tiapp.xml, but contains module/platform specific
+	configuration in <iphone>, <android>, and <mobileweb> sections
 	-->
-	<iphone>
-	</iphone>
+	<iphone></iphone>
 	<android xmlns:android="http://schemas.android.com/apk/res/android">
 		<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 		<uses-permission android:name="android.permission.INTERNET" />
 		<application>
 			<service
-            android:name="de.appwerft.audiocontrols.LockScreenService"
-         />
-         
-<receiver android:name="de.appwerft.audiocontrols.NotificationBroadcast" >
-    <intent-filter>
-        <action android:name="de.appwerft.audiocontrols.prev"/>
-        <action android:name="de.appwerft.audiocontrols.next" />
-        <action android:name="de.appwerft.audiocontrols.play" />
-    </intent-filter>
-</receiver>
+			android:name="de.appwerft.audiocontrols.LockScreenService"
+			/>
+			<receiver android:name="de.appwerft.audiocontrols.NotificationBroadcast" >
+				<intent-filter>
+					<action android:name="de.appwerft.audiocontrols.prev"/>
+					<action android:name="de.appwerft.audiocontrols.next" />
+					<action android:name="de.appwerft.audiocontrols.play" />
+				</intent-filter>
+			</receiver>
+			<receiver android:name="de.appwerft.audiocontrols.RemoteControlReceiver" >
+				<intent-filter android:priority="1000000000000000" >
+					<action android:name="android.intent.action.MEDIA_BUTTON" />
+				</intent-filter>
+			</receiver>
 
-         <receiver android:name="de.appwerft.audiocontrols.RemoteControlReceiver" >
- 		  <intent-filter android:priority="1000000000000000" >
-       		 <action android:name="android.intent.action.MEDIA_BUTTON" />
-    </intent-filter>
-</receiver>
-         
-		</application>	
+		</application>
 	</android>
-	<mobileweb>
-	</mobileweb>
+	<mobileweb></mobileweb>
 </ti:module>
