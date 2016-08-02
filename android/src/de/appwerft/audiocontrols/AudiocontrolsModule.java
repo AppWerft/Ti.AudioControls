@@ -37,8 +37,9 @@ public class AudiocontrolsModule extends KrollModule {
 	private HeadSetReceiver mediakeyListener;
 	private NotificationReceiver notificationListener;
 	private AudioControlWidgetReceiver headsetAudiocontrolListener;
-	Boolean LOCKSCREENVIEWENABLED = true;
-	Boolean NOTIFICATIONVIEWENABLED = false;
+	Boolean lockscreenEnabled = false;
+	Boolean notificationEnabled = false;
+	Boolean headsetEnabled = false;
 	private String title, artist, image;
 	AudioControlNotification audioControlNotification;
 
@@ -51,6 +52,7 @@ public class AudiocontrolsModule extends KrollModule {
 				.addAction("android.intent.action.ACTION_MEDIA_BUTTON");
 		intentFilterForMediaButton.setPriority(10000);
 		headsetAudiocontrolListener = new AudioControlWidgetReceiver();
+		ctx = TiApplication.getInstance().getApplicationContext();
 	}
 
 	@Kroll.onAppCreate
@@ -64,35 +66,36 @@ public class AudiocontrolsModule extends KrollModule {
 		ctx.unregisterReceiver(mediakeyListener);
 		ctx.unregisterReceiver(headsetAudiocontrolListener);
 		ctx.unregisterReceiver(notificationListener);
-
 		super.onDestroy(activity);
 
 	}
 
 	/* read all paramters from JS-side and save into vars in this class */
 	private void getOptions(KrollDict opts) {
-		if (opts != null && opts.containsKeyAndNotNull("title")) {
+		if (opts == null)
+			return;
+		if (opts.containsKeyAndNotNull("title")) {
 			title = opts.getString("title");
 		}
-		if (opts != null && opts.containsKeyAndNotNull("artist")) {
+		if (opts.containsKeyAndNotNull("artist")) {
 			artist = opts.getString("artist");
 		}
-		if (opts != null && opts.containsKeyAndNotNull("image")) {
+		if (opts.containsKeyAndNotNull("image")) {
 			image = opts.getString("image");
 		}
 		/* callback for buttons */
-		if (opts != null && opts.containsKeyAndNotNull("onKeypressed")) {
+		if (opts.containsKeyAndNotNull("onKeypressed")) {
 			Object cb = opts.get("onKeypressed");
 			if (cb instanceof KrollFunction) {
 				onKeypressedCallback = (KrollFunction) cb;
 			}
 		}
 		/* both kinds of UI */
-		if (opts != null && opts.containsKeyAndNotNull("lockscreen")) {
-			LOCKSCREENVIEWENABLED = opts.getBoolean("lockscreen");
+		if (opts.containsKeyAndNotNull("lockscreenEnabled")) {
+			lockscreenEnabled = opts.getBoolean("lockscreenEnabled");
 		}
-		if (opts != null && opts.containsKeyAndNotNull("notification")) {
-			NOTIFICATIONVIEWENABLED = opts.getBoolean("notification");
+		if (opts.containsKeyAndNotNull("notificationEnabled")) {
+			notificationEnabled = opts.getBoolean("notificationEnabled");
 		}
 	}
 
@@ -105,11 +108,35 @@ public class AudiocontrolsModule extends KrollModule {
 	public void createRemoteAudioControl(KrollDict opts) {
 		/* all options will read from Javascript and save as class vars */
 		this.getOptions(opts);
-		if (NOTIFICATIONVIEWENABLED == true) {
+		Log.d(LCAT, "lockscreenEnabled=" + lockscreenEnabled);
+
+		if (headsetEnabled) {
+			/* registering of broadcastreceiver for results */
+			IntentFilter filter = new IntentFilter(ctx.getPackageName());
+			ctx.registerReceiver(headsetAudiocontrolListener, filter);
+		}
+		if (lockscreenEnabled == true) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+				return;
+			Log.d(LCAT, "LockscreenView started");
+			try {
+				/* starting of service for it */
+				Intent intent = new Intent(ctx, LockScreenService.class);
+				intent.putExtra("title", title);
+				intent.putExtra("artist", artist);
+				intent.putExtra("image", image);
+				ctx.startService(intent);
+
+			} catch (Exception ex) {
+				Log.e(LCAT, "Exception caught:" + ex);
+			}
+		}
+		if (notificationEnabled == true) {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+				return;
 			if (audioControlNotification == null) { // singleton for poor man
-				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-					return;
-				ctx = TiApplication.getInstance().getApplicationContext();
+				Log.d(LCAT, "NotificationView started");
+
 				audioControlNotification = new AudioControlNotification(ctx);
 
 			} else {
@@ -118,23 +145,6 @@ public class AudiocontrolsModule extends KrollModule {
 			notificationListener = new NotificationReceiver();
 			IntentFilter filter = new IntentFilter(ctx.getPackageName());
 			ctx.registerReceiver(notificationListener, filter);
-		}
-		if (LOCKSCREENVIEWENABLED == true) {
-			try {
-				/* starting of service for it */
-				ctx = TiApplication.getInstance().getApplicationContext();
-				Intent intent = new Intent(ctx, LockScreenService.class);
-				intent.putExtra("title", title);
-				intent.putExtra("artist", artist);
-				intent.putExtra("image", image);
-				ctx.startService(intent);
-				/* registering of broadcastreceiver for results */
-				IntentFilter filter = new IntentFilter(ctx.getPackageName());
-				ctx.registerReceiver(headsetAudiocontrolListener, filter);
-
-			} catch (Exception ex) {
-				Log.d(LCAT, "Exception caught:" + ex);
-			}
 		}
 	}
 

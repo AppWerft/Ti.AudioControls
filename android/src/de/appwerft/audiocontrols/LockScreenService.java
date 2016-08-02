@@ -1,5 +1,6 @@
 package de.appwerft.audiocontrols;
 
+import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
@@ -34,12 +35,14 @@ public class LockScreenService extends Service {
 		ctx = TiApplication.getInstance().getApplicationContext();
 		res = ctx.getResources();
 		packageName = ctx.getPackageName();
+		Log.d(LCAT, "LockscreenService constructed");
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		Log.d(LCAT, "LockscreenService created");
 		audioControlWidget = new AudioControlWidget(ctx);
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -47,7 +50,7 @@ public class LockScreenService extends Service {
 				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
 				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 		final int type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
-		final int WIDTH = 160;
+		final int WIDTH = 155;
 		layoutParams = new WindowManager.LayoutParams(
 				WindowManager.LayoutParams.FILL_PARENT, WIDTH, type, flags,
 				PixelFormat.TRANSLUCENT);
@@ -55,7 +58,7 @@ public class LockScreenService extends Service {
 
 		appProperties = TiApplication.getInstance().getAppProperties();
 		String verticalAlign = appProperties.getString(
-				"PLAYER_VERTICAL_POSITION", "TOP");
+				"PLAYER_VERTICAL_POSITION", "BOTTOM");
 		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
 				: Gravity.BOTTOM;
 		layoutParams.alpha = 0.95f;
@@ -67,6 +70,7 @@ public class LockScreenService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(LCAT, "onStartCommand");
 		audioControlWidget
 				.updateContent(intent.getStringExtra("image"),
 						intent.getStringExtra("title"),
