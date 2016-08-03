@@ -107,10 +107,12 @@ public class AudioControlWidget extends RelativeLayout {
 	};
 
 	public void updateContent(String imageUrl, String title, String artist) {
+		if (imageUrl == null || imageUrl.length() == 0)
+			return;
 		if (this.placeholderId > 0) {
 			try {
 				@SuppressWarnings("unused")
-				URL url = new URL(imageUrl);
+				URL dummy = new URL(imageUrl);
 				Picasso.with(ctx).load(imageUrl).placeholder(placeholderId)
 						.into(this.coverView);
 			} catch (MalformedURLException e) {
@@ -120,14 +122,6 @@ public class AudioControlWidget extends RelativeLayout {
 			this.artistView.setText(artist);
 		} else
 			Log.e(LCAT, "cannot resolve placeholder.png");
-	}
-
-	public void setTitle(String title) {
-		titleView.setText(title);
-	}
-
-	public void setArtist(String artist) {
-		artistView.setText(artist);
 	}
 
 }

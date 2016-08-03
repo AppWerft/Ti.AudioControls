@@ -22,6 +22,7 @@ import android.widget.RemoteViews;
 
 class AudioControlNotification {
 	final int NOTIFICATION_ID = 1337;
+	final String LCAT = "LockAudioScreen 😇😇😇";
 	Context ctx;
 	Notification notification;
 	RemoteViews view;
@@ -44,10 +45,11 @@ class AudioControlNotification {
 		playcontrolId = getResId("playCtrl", "id");
 		playiconId = getResId("android:ic_media_play", "drawable");
 		pauseiconId = getResId("android:ic_media_pause", "drawable");
-		notification = new NotificationCompat.Builder(ctx)
+		notification = new NotificationCompat.Builder(ctx).setOngoing(true)
 				.setSmallIcon(getResId("notification_icon", "drawable"))
 				.setContentTitle("").build();
-		notification.flags |= Notification.FLAG_AUTO_CANCEL;
+		// notification.flags |= Notification.FLAG_AUTO_CANCEL;
+
 		notification.contentView = view;
 
 		setButtonListeners(view, ctx);
@@ -58,16 +60,19 @@ class AudioControlNotification {
 	}
 
 	public void updateContent(String imageUrl, String title, String artist) {
-		notification.contentView.setTextViewText(artistId, artist);
-		notification.contentView.setTextViewText(titleId, title);
+		Log.d(LCAT, "updating notification with " + imageUrl + " title="
+				+ title + " artist=" + artist);
+		// notification.contentView.setTextViewText(artistId, artist);
+		// notification.contentView.setTextViewText(titleId, title);
 		// notification.contentView.setImageViewBitmap(coverimageId,
 		// getImageBitmap(imageUrl));
+		// Picasso makes trouble with nonUIthread:
+		// https://github.com/square/picasso/issues/547
 		Picasso.with(ctx).load(imageUrl)
 				.into(view, coverimageId, NOTIFICATION_ID, notification);
 
 	}
 
-	@SuppressWarnings("unused")
 	private Bitmap getImageBitmap(String url) {
 		Bitmap bitmap = null;
 		try {

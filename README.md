@@ -3,45 +3,29 @@
 
 This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player) by headset, lockscreen and/or notification bar.
 
+View over lockscreen only works for devices ≤ Lollipop and player control as notification only works with API level ≥ Lollipop. Therefore the module uses a property "lollipop" to decide, which widget should work: "WIDGET_NOTIFICATION" or "WIDGET_LOCKSCREEN".
+
 It is still in work.
 
 ##Interface
 
 ```javascript
 var AudioControlModule = require("de.appwerft.audiocontrol");
-
+var LoremIpsum = require("libs/loremipsum");
 
 // audioControl is singleton, therefore we use module for it:
-AudioControlModule.createRemoteControl({
-    artist : "Michael Jackson",
-    title : "Awesome track",
-    image : "http://",
-    keypressed : function(_e) {
-        switch (_e.keycode) {
-            case AudioControlModule.BUTTON_PLAYPAUSE:
-            break;
-            case AudioControlModule.BUTTON_SKIPBACK:
-            break;
-            case AudioControlModule.BUTTON_SKIPFORWARD:
-            break;
-        }
-    
-    }
+var AudioControls = require("de.appwerft.audiocontrols");
+    AudioControls.createRemoteAudioControl({
+        onKeypressed : function(_event) {
+            console.log(_event);
+            AudioControls.updateRemoteAudioControl({
+                image : "http://lorempixel.com/120/120/cats" + "?_=" + Math.random(),
+                artist : LoremIpsum(10),
+                title : LoremIpsum(2)
+            });
+        },
+        lollipop : AudioControls.WIDGET_LOCKSCREEN,
 });
-AudioControlModule.updateRemoteControl({
-    artist : "Michael Jackson",
-    title : "Awesome track",
-    image : "http://",
-});
-
-var onKeypressed = function(_e) {
-    console.log(_e);
-};
-
-AudioControlModule.addEventListener("remotekeyboard", inKeypressed);
-AudioControlModule.removeEventListener("remotekeyboard", inKeypressed);
-
-
 ```
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
 

@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.view.KeyEvent;
-import android.view.View;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
@@ -32,14 +31,15 @@ public class AudiocontrolsModule extends KrollModule {
 	AudioControlWidget audioControlWidget;
 	final String LCAT = "RemAudioScreen ♛♛♛";
 	final int NOTIFICATION_ID = 1;
+	private int lollipop = 1;
 	private Intent lockscreenService;
 	KrollFunction onKeypressedCallback = null;
 	private HeadSetReceiver mediakeyListener;
 	private NotificationReceiver notificationListener;
 	private AudioControlWidgetReceiver headsetAudiocontrolListener;
 	Boolean lockscreenEnabled = false;
-	Boolean notificationEnabled = false;
-	Boolean headsetEnabled = false;
+	Boolean notificationEnabled = true;
+	Boolean headsetEnabled = true;
 	private String title, artist, image;
 	AudioControlNotification audioControlNotification;
 
@@ -63,11 +63,13 @@ public class AudiocontrolsModule extends KrollModule {
 	@Override
 	public void onDestroy(Activity activity) {
 		TiApplication.getInstance().stopService(lockscreenService);
-		ctx.unregisterReceiver(mediakeyListener);
-		ctx.unregisterReceiver(headsetAudiocontrolListener);
-		ctx.unregisterReceiver(notificationListener);
+		if (mediakeyListener != null)
+			ctx.unregisterReceiver(mediakeyListener);
+		if (headsetAudiocontrolListener != null)
+			ctx.unregisterReceiver(headsetAudiocontrolListener);
+		if (notificationListener != null)
+			ctx.unregisterReceiver(notificationListener);
 		super.onDestroy(activity);
-
 	}
 
 	/* read all paramters from JS-side and save into vars in this class */
@@ -82,6 +84,9 @@ public class AudiocontrolsModule extends KrollModule {
 		}
 		if (opts.containsKeyAndNotNull("image")) {
 			image = opts.getString("image");
+		}
+		if (opts.containsKeyAndNotNull("lollipop")) {
+			lollipop = opts.getInt("lollipop");
 		}
 		/* callback for buttons */
 		if (opts.containsKeyAndNotNull("onKeypressed")) {
@@ -108,16 +113,15 @@ public class AudiocontrolsModule extends KrollModule {
 	public void createRemoteAudioControl(KrollDict opts) {
 		/* all options will read from Javascript and save as class vars */
 		this.getOptions(opts);
-		Log.d(LCAT, "lockscreenEnabled=" + lockscreenEnabled);
 
-		if (headsetEnabled) {
-			/* registering of broadcastreceiver for results */
-			IntentFilter filter = new IntentFilter(ctx.getPackageName());
-			ctx.registerReceiver(headsetAudiocontrolListener, filter);
-		}
-		if (lockscreenEnabled == true) {
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-				return;
+		/* registering of broadcastreceiver for results */
+		IntentFilter filter = new IntentFilter(ctx.getPackageName());
+		ctx.registerReceiver(headsetAudiocontrolListener, filter);
+		final int VERSION = Build.VERSION.SDK_INT;
+		Log.d(LCAT, ">>>>>>>>> AP Version=" + VERSION + "   lollipop="
+				+ WIDGET_LOCKSCREEN);
+		if (VERSION < 21
+				|| ((VERSION == 21 || VERSION == 22) && lollipop == WIDGET_LOCKSCREEN)) {
 			Log.d(LCAT, "LockscreenView started");
 			try {
 				/* starting of service for it */
@@ -130,21 +134,19 @@ public class AudiocontrolsModule extends KrollModule {
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
+
 		}
-		if (notificationEnabled == true) {
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-				return;
+		if (VERSION > 22
+				|| ((VERSION == 21 || VERSION == 22) && lollipop == WIDGET_NOTIFICATION)) {
 			if (audioControlNotification == null) { // singleton for poor man
 				Log.d(LCAT, "NotificationView started");
-
 				audioControlNotification = new AudioControlNotification(ctx);
-
 			} else {
 				audioControlNotification.updateContent(image, title, artist);
 			}
 			notificationListener = new NotificationReceiver();
-			IntentFilter filter = new IntentFilter(ctx.getPackageName());
-			ctx.registerReceiver(notificationListener, filter);
+			ctx.registerReceiver(notificationListener,
+					new IntentFilter(ctx.getPackageName()));
 		}
 	}
 
@@ -160,20 +162,6 @@ public class AudiocontrolsModule extends KrollModule {
 	@Kroll.method
 	public void removeEventListener(String eventname) {
 		ctx.unregisterReceiver(mediakeyListener);
-	}
-
-	public void onStartStop(View view) {
-		Log.d(LCAT, "▶︎◼︎ ▶︎◼ ︎▶︎◼︎");
-
-	}
-
-	public void onForward(View view) {
-		Log.d(LCAT, ">>>>>>>>>>>>>>>>>>>");
-
-	}
-
-	public void onRewind(View view) {
-		Log.d(LCAT, "<<<<<<<<<<<<<<<<<<<<");
 	}
 
 	@Kroll.method
@@ -195,6 +183,9 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	// http://stackoverflow.com/questions/9056814/how-do-i-intercept-button-presses-on-the-headset-in-android
+	/*
+	 * This Receiver is for events from hardware button on Headset
+	 */
 	private class HeadSetReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {

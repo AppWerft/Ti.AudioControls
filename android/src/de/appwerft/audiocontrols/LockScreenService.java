@@ -50,9 +50,9 @@ public class LockScreenService extends Service {
 				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
 				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 		final int type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
-		final int WIDTH = 155;
+		final int HEIGHT = 155;
 		layoutParams = new WindowManager.LayoutParams(
-				WindowManager.LayoutParams.FILL_PARENT, WIDTH, type, flags,
+				WindowManager.LayoutParams.FILL_PARENT, HEIGHT, type, flags,
 				PixelFormat.TRANSLUCENT);
 		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 
@@ -65,7 +65,7 @@ public class LockScreenService extends Service {
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
 		filter.addAction(Intent.ACTION_USER_PRESENT);
-		registerReceiver(lockScreenStateReceiver, filter);
+		ctx.registerReceiver(lockScreenStateReceiver, filter);
 	}
 
 	@Override
@@ -104,6 +104,7 @@ public class LockScreenService extends Service {
 	@Override
 	public void onDestroy() {
 		windowManager.removeView(audioControlWidget);
+		ctx.unregisterReceiver(lockScreenStateReceiver);
 	}
 }
 

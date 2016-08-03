@@ -3,8 +3,8 @@
 xmlns:android="http://schemas.android.com/apk/res/android"
 android:id="@+id/remoteaudiocontrol_notification"
 android:layout_width="match_parent"
-android:layout_height="200dp"
-android:paddingLeft="5dp"
+android:layout_height="match_parent"
+android:paddingLeft="0dp"
 android:paddingRight="0dp"
 android:paddingTop="0dp"
 android:paddingBottom="0dp"
@@ -14,7 +14,10 @@ android:background="#222">
 	android:layout_height="95dp"
 	android:id="@+id/coverimage"
 	android:src="@drawable/defaultimage"
-	android:paddingTop="10dp" />
+	android:paddingTop="0dp"
+	android:paddingLeft="0dp"
+	
+	 />
 	<TextView
 	android:layout_width="wrap_content"
 	android:layout_height="36dp"
@@ -22,27 +25,32 @@ android:background="#222">
 	android:ellipsize="marquee"
 	android:textStyle="bold"
 	android:textSize="24dp"
+
 	android:textColor="#fff"
 	android:fontFamily="DroidSans"
-	android:paddingLeft="105dp"
-	android:paddingTop="5dp" />
+	android:paddingLeft="100dp"
+	android:paddingTop="2dp" />
 	<TextView
-	android:layout_width="wrap_content"
+	android:layout_width="fill_parent"
+	android:paddingRight="5dp" 
+	 android:scrollHorizontally="true" 
 	android:layout_height="wrap_content"
-	android:text="artist"
+	
 	android:id="@+id/artist"
 	android:ellipsize="marquee"
 	android:fontFamily="DroidSans"
 	android:textColor="#fff"
-	android:textSize="16dp"
-	android:paddingLeft="105dp"
-	android:paddingTop="40dp" />
+	android:textSize="14dp"
+	android:singleLine="true"
+	android:marqueeRepeatLimit="marquee_forever"
+	android:paddingLeft="100dp"
+	android:paddingTop="30dp" />
 	<RelativeLayout
-	android:layout_width="160dp"
+	android:layout_width="150dp"
 	android:layout_height="55dp"
 	android:id="@+id/ctrlbox"
 	android:paddingRight="0dp"
-	android:paddingBottom="10dp"
+	android:paddingBottom="5dp"
 	android:layout_alignParentBottom="true"
 	android:clickable="false"
 	android:layout_alignParentRight="true"
@@ -55,8 +63,8 @@ android:background="#222">
 		android:background="@android:color/transparent"
 		android:src="@android:drawable/ic_media_previous"
 		android:clickable="true"
-		android:scaleX="1.8"
-		android:scaleY="1.8"
+		android:scaleX="1.4"
+		android:scaleY="1.4"
 		android:layout_centerVertical="true"
 		android:layout_marginStart="10dp"
 		
@@ -68,8 +76,8 @@ android:background="#222">
 		
 		android:src="@android:drawable/ic_media_pause"
 		android:background="@android:color/transparent"
-		android:scaleX="1.8"
-		android:scaleY="1.8"
+		android:scaleX="1.4"
+		android:scaleY="1.4"
 		android:layout_centerVertical="true"
 		android:layout_centerHorizontal="true" />
 		<ImageButton
@@ -78,8 +86,8 @@ android:background="#222">
 		android:background="@android:color/transparent"
 		android:id="@+id/nextcontrol"
 		android:src="@android:drawable/ic_media_ff"
-		android:scaleX="1.8"
-		android:scaleY="1.8"
+		android:scaleX="1.4"
+		android:scaleY="1.4"
 		android:layout_alignTop="@+id/playcontrol"
 		android:layout_alignParentRight="true"
 		android:layout_alignParentEnd="true"
