@@ -13,7 +13,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Vibrator;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
@@ -106,6 +108,7 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void updateRemoteAudioControl(KrollDict opts) {
+		Log.d(LCAT, "inside updateRemoteAudioControl");
 		this.createRemoteAudioControl(opts);
 	}
 
@@ -142,11 +145,20 @@ public class AudiocontrolsModule extends KrollModule {
 				Log.d(LCAT, "NotificationView started");
 				audioControlNotification = new AudioControlNotification(ctx);
 			} else {
+				Log.d(LCAT,
+						">>>>>>  call audioControlNotification.updateContent");
 				audioControlNotification.updateContent(image, title, artist);
 			}
-			notificationListener = new NotificationReceiver();
-			ctx.registerReceiver(notificationListener,
-					new IntentFilter(ctx.getPackageName()));
+			NotificationReceiver notificationReceiver = new NotificationReceiver();
+			final IntentFilter playFilter = new IntentFilter(
+					"de.appwerft.audiocontrols.PLAY");
+			final IntentFilter prevFilter = new IntentFilter(
+					"de.appwerft.audiocontrols.PREV");
+			final IntentFilter nextFilter = new IntentFilter(
+					"de.appwerft.audiocontrols.NEXT");
+			ctx.registerReceiver(notificationReceiver, playFilter);
+			ctx.registerReceiver(notificationReceiver, prevFilter);
+			ctx.registerReceiver(notificationReceiver, nextFilter);
 		}
 	}
 
@@ -227,16 +239,26 @@ public class AudiocontrolsModule extends KrollModule {
 		}
 	}
 
+	/*
+	 * For testing: adb shell am broadcast -a de.appwerft.audiocontrols.PLAY
+	 */
 	private class NotificationReceiver extends BroadcastReceiver {
 		@Override
-		public void onReceive(Context context, Intent intent) {
-			if (intent.getAction().equals("de.appwerft.audiocontrols.play")) {
+		public void onReceive(Context ctx, Intent intent) {
+			Log.d(LCAT, NotificationReceiver.class.getSimpleName(),
+					"received broadcast");
+			String pn = "de.appwerft.audiocontrols";
+			String action = intent.getAction();
+			Vibrator v = (Vibrator) ctx
+					.getSystemService(Context.VIBRATOR_SERVICE);
+			v.vibrate(50);
+			if (action.equalsIgnoreCase(pn + ".PLAY")) {
 				Log.d(LCAT, "►◼ pressed︎");
 				audioControlNotification.togglePlayButton();
-			} else if (intent.getAction().equals(
-					"de.appwerft.audiocontrols.next")) {
-			} else if (intent.getAction().equals(
-					"de.appwerft.audiocontrols.prev")) {
+			} else if (action.equalsIgnoreCase(pn + ".NEXT")) {
+				Log.d(LCAT, "⇤ pressed︎");
+			} else if (action.equalsIgnoreCase(pn + ".PREV")) {
+				Log.d(LCAT, "⇥ pressed︎");
 			}
 		}
 	}

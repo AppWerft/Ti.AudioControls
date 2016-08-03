@@ -8,7 +8,7 @@ import java.net.URLConnection;
 
 import org.appcelerator.kroll.common.Log;
 
-import com.squareup.picasso.Picasso;
+//import com.squareup.picasso.Picasso;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -29,6 +29,8 @@ class AudioControlNotification {
 	final boolean PLAYING = true;
 	final boolean PAUSING = false;
 	boolean state = PLAYING;
+	final int REQUEST_CODE = 0;
+
 	int artistId, coverimageId, titleId, prevcontrolId, nextcontrolId,
 			playcontrolId;
 	int playiconId, pauseiconId;
@@ -43,34 +45,34 @@ class AudioControlNotification {
 		prevcontrolId = getResId("prevCtrl", "id");
 		nextcontrolId = getResId("nextCtrl", "id");
 		playcontrolId = getResId("playCtrl", "id");
+
+		/* for dynamic update: */
 		playiconId = getResId("android:ic_media_play", "drawable");
 		pauseiconId = getResId("android:ic_media_pause", "drawable");
+
 		notification = new NotificationCompat.Builder(ctx).setOngoing(true)
 				.setSmallIcon(getResId("notification_icon", "drawable"))
 				.setContentTitle("").build();
 		// notification.flags |= Notification.FLAG_AUTO_CANCEL;
-
 		notification.contentView = view;
-
 		setButtonListeners(view, ctx);
-
 		NotificationManager nm = (NotificationManager) ctx
 				.getSystemService(Context.NOTIFICATION_SERVICE);
 		nm.notify(NOTIFICATION_ID, notification);
 	}
 
 	public void updateContent(String imageUrl, String title, String artist) {
-		Log.d(LCAT, "updating notification with " + imageUrl + " title="
-				+ title + " artist=" + artist);
-		// notification.contentView.setTextViewText(artistId, artist);
-		// notification.contentView.setTextViewText(titleId, title);
-		// notification.contentView.setImageViewBitmap(coverimageId,
-		// getImageBitmap(imageUrl));
+		Log.d(LCAT, "inside audioControlNotification.updateContent");
+		notification.contentView.setTextViewText(artistId, artist);
+		notification.contentView.setTextViewText(titleId, title);
+		notification.contentView.setImageViewBitmap(coverimageId,
+				getImageBitmap(imageUrl));
 		// Picasso makes trouble with nonUIthread:
 		// https://github.com/square/picasso/issues/547
-		Picasso.with(ctx).load(imageUrl)
-				.into(view, coverimageId, NOTIFICATION_ID, notification);
-
+		/*
+		 * Picasso.with(ctx).load(imageUrl) .into(view, coverimageId,
+		 * NOTIFICATION_ID, notification);
+		 */
 	}
 
 	private Bitmap getImageBitmap(String url) {
@@ -91,28 +93,36 @@ class AudioControlNotification {
 	}
 
 	public void togglePlayButton() {
-		notification.contentView.setImageViewResource(playcontrolId,
-				(state == PLAYING) ? pauseiconId : playiconId);
+		Log.d(LCAT, "togglePlayButton=" + state);
+		int id = (state == PLAYING) ? pauseiconId : playiconId;
+		Log.d(LCAT, "id=" + id);
+		notification.contentView.setImageViewResource(playcontrolId, id);
 		state = !state;
 
 	};
 
 	private void setButtonListeners(RemoteViews view, Context ctx) {
-		Intent prevIntent = new Intent("de.appwerft.audiocontrols.prev"/* Action */);
-		Intent nextIntent = new Intent("de.appwerft.audiocontrols.next");
-		Intent playIntent = new Intent("de.appwerft.audiocontrols.play");
+		Log.d(LCAT, "inside setButtonListeners");
+		String pn = "de.appwerft.audiocontrols";
+		Intent prevIntent = new Intent(pn + ".PREV");
+		Intent nextIntent = new Intent(pn + ".NEXT");
+
 		// https://developer.android.com/reference/android/widget/RemoteViews.html#setOnClickPendingIntent(int,%20android.app.PendingIntent)
-		PendingIntent pPrev = PendingIntent.getBroadcast(ctx, 0, prevIntent,
-				PendingIntent.FLAG_UPDATE_CURRENT);
+
+		/* for every event we define a pendingIntent with embedded intent */
+
+		PendingIntent pPrev = PendingIntent.getBroadcast(ctx, REQUEST_CODE,
+				prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		view.setOnClickPendingIntent(prevcontrolId, pPrev);
 
-		PendingIntent pNext = PendingIntent.getBroadcast(ctx, 0, nextIntent,
-				PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent pNext = PendingIntent.getBroadcast(ctx, REQUEST_CODE,
+				nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		view.setOnClickPendingIntent(nextcontrolId, pNext);
 
-		PendingIntent pPlay = PendingIntent.getBroadcast(ctx, 0, playIntent,
-				PendingIntent.FLAG_UPDATE_CURRENT);
-		view.setOnClickPendingIntent(playcontrolId, pPlay);
+		view.setOnClickPendingIntent(
+				playcontrolId,
+				PendingIntent.getBroadcast(ctx, REQUEST_CODE, new Intent(pn
+						+ ".PLAY"), PendingIntent.FLAG_UPDATE_CURRENT));
 	}
 
 	/* helper function for safety getting resources */
