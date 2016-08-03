@@ -71,6 +71,8 @@ public class AudiocontrolsModule extends KrollModule {
 			ctx.unregisterReceiver(headsetAudiocontrolListener);
 		if (notificationListener != null)
 			ctx.unregisterReceiver(notificationListener);
+		if (audioControlNotification != null)
+			audioControlNotification.cancelNotification();
 		super.onDestroy(activity);
 	}
 
@@ -152,13 +154,13 @@ public class AudiocontrolsModule extends KrollModule {
 			NotificationReceiver notificationReceiver = new NotificationReceiver();
 			final IntentFilter playFilter = new IntentFilter(
 					"de.appwerft.audiocontrols.PLAY");
-			final IntentFilter prevFilter = new IntentFilter(
-					"de.appwerft.audiocontrols.PREV");
-			final IntentFilter nextFilter = new IntentFilter(
-					"de.appwerft.audiocontrols.NEXT");
-			ctx.registerReceiver(notificationReceiver, playFilter);
-			ctx.registerReceiver(notificationReceiver, prevFilter);
-			ctx.registerReceiver(notificationReceiver, nextFilter);
+			final IntentFilter prevFilter = new IntentFilter();
+			final IntentFilter nextFilter = new IntentFilter();
+			IntentFilter myfilter = new IntentFilter();
+			myfilter.addAction("PLAYCONTROL");
+			// ctx.registerReceiver(notificationReceiver, playFilter);
+			ctx.registerReceiver(notificationReceiver, myfilter);
+			// ctx.registerReceiver(notificationReceiver, nextFilter);
 		}
 	}
 
@@ -242,7 +244,7 @@ public class AudiocontrolsModule extends KrollModule {
 	/*
 	 * For testing: adb shell am broadcast -a de.appwerft.audiocontrols.PLAY
 	 */
-	private class NotificationReceiver extends BroadcastReceiver {
+	public class NotificationReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
 			Log.d(LCAT, NotificationReceiver.class.getSimpleName(),

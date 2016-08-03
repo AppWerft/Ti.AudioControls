@@ -1,14 +1,6 @@
 package de.appwerft.audiocontrols;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-
 import org.appcelerator.kroll.common.Log;
-
-//import com.squareup.picasso.Picasso;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -16,15 +8,19 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
+import android.view.View;
 import android.widget.RemoteViews;
+
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 class AudioControlNotification {
 	final int NOTIFICATION_ID = 1337;
 	final String LCAT = "LockAudioScreen 😇😇😇";
 	Context ctx;
 	Notification notification;
+	NotificationManager notificationManager;
 	RemoteViews view;
 	final boolean PLAYING = true;
 	final boolean PAUSING = false;
@@ -52,44 +48,18 @@ class AudioControlNotification {
 
 		notification = new NotificationCompat.Builder(ctx).setOngoing(true)
 				.setSmallIcon(getResId("notification_icon", "drawable"))
-				.setContentTitle("").build();
+				.setOnlyAlertOnce(true).setContentTitle("").build();
 		// notification.flags |= Notification.FLAG_AUTO_CANCEL;
 		notification.contentView = view;
 		setButtonListeners(view, ctx);
-		NotificationManager nm = (NotificationManager) ctx
+		notificationManager = (NotificationManager) ctx
 				.getSystemService(Context.NOTIFICATION_SERVICE);
-		nm.notify(NOTIFICATION_ID, notification);
+		notificationManager.notify(NOTIFICATION_ID, notification);
 	}
 
-	public void updateContent(String imageUrl, String title, String artist) {
-		Log.d(LCAT, "inside audioControlNotification.updateContent");
-		notification.contentView.setTextViewText(artistId, artist);
-		notification.contentView.setTextViewText(titleId, title);
-		notification.contentView.setImageViewBitmap(coverimageId,
-				getImageBitmap(imageUrl));
-		// Picasso makes trouble with nonUIthread:
-		// https://github.com/square/picasso/issues/547
-		/*
-		 * Picasso.with(ctx).load(imageUrl) .into(view, coverimageId,
-		 * NOTIFICATION_ID, notification);
-		 */
-	}
-
-	private Bitmap getImageBitmap(String url) {
-		Bitmap bitmap = null;
-		try {
-			URLConnection conn = new URL(url).openConnection();
-			conn.connect();
-			InputStream inputStream = conn.getInputStream();
-			BufferedInputStream bufferedInputStream = new BufferedInputStream(
-					inputStream);
-			bitmap = BitmapFactory.decodeStream(bufferedInputStream);
-			bufferedInputStream.close();
-			inputStream.close();
-		} catch (IOException e) {
-			Log.e("AudioCtrlNotification", "Error getting bitmap", e);
-		}
-		return bitmap;
+	public void cancelNotification() {
+		Log.d(LCAT, "kill all Notification from this app ☗☗");
+		notificationManager.cancelAll();
 	}
 
 	public void togglePlayButton() {
@@ -98,21 +68,49 @@ class AudioControlNotification {
 		Log.d(LCAT, "id=" + id);
 		notification.contentView.setImageViewResource(playcontrolId, id);
 		state = !state;
-
+		notificationManager.notify(NOTIFICATION_ID, notification);
 	};
+
+	public void updateContent(String imageUrl, String title, String artist) {
+		Log.d(LCAT, "inside audioControlNotification.updateContent");
+		notification.contentView.setTextViewText(artistId, artist);
+		notification.contentView.setTextViewText(titleId, title);
+		ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton
+		imageLoader.loadImage(imageUrl, new SimpleImageLoadingListener() {
+			@Override
+			public void onLoadingComplete(String imageUri, View view,
+					Bitmap loadedImage) {
+				notification.contentView.setImageViewBitmap(coverimageId,
+						loadedImage);
+			}
+		});
+		notificationManager.notify(NOTIFICATION_ID, notification);
+	}
 
 	private void setButtonListeners(RemoteViews view, Context ctx) {
 		Log.d(LCAT, "inside setButtonListeners");
 		String pn = "de.appwerft.audiocontrols";
-		Intent prevIntent = new Intent(pn + ".PREV");
-		Intent nextIntent = new Intent(pn + ".NEXT");
+		Intent intent = new Intent();
+		intent.setClass(
+				ctx,
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+		intent.putExtra("cmd", "play");
+
+		Intent prevIntent = new Intent(
+				ctx,
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+		prevIntent.setAction("goPREV");
+		Intent nextIntent = new Intent(
+				ctx,
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+		prevIntent.setAction("goNEXT");
 
 		// https://developer.android.com/reference/android/widget/RemoteViews.html#setOnClickPendingIntent(int,%20android.app.PendingIntent)
 
 		/* for every event we define a pendingIntent with embedded intent */
 
 		PendingIntent pPrev = PendingIntent.getBroadcast(ctx, REQUEST_CODE,
-				prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+				intent, PendingIntent.FLAG_UPDATE_CURRENT);
 		view.setOnClickPendingIntent(prevcontrolId, pPrev);
 
 		PendingIntent pNext = PendingIntent.getBroadcast(ctx, REQUEST_CODE,
