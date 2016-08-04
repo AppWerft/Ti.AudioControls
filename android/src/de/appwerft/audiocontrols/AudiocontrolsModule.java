@@ -15,7 +15,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Vibrator;
 import android.view.KeyEvent;
-import android.widget.Toast;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
