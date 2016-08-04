@@ -3,6 +3,11 @@
 
 This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player) by headset, lockscreen and/or notification bar.
 
+Thanks to [inFocusmedia  in Kalmar](http://www.infocusmedia.se/app/)  in Amsterdam for sponsoring and Jonas Thoor for patience and support. 
+
+ <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=40/>
+
+
 View over lockscreen only works for devices ≤ Lollipop and player control as notification only works with API level ≥ Lollipop. Therefore the module uses a property "lollipop" to decide, which widget should work: "WIDGET_NOTIFICATION" or "WIDGET_LOCKSCREEN".
 
 It is still in work.
@@ -27,6 +32,15 @@ var AudioControls = require("de.appwerft.audiocontrols");
         lollipop : AudioControls.WIDGET_LOCKSCREEN,
 });
 ```
+
+Your manifest needs to entries:
+
+```xml
+<service android:name="de.appwerft.audiocontrols.LockScreenService" android:enabled="true" android:exported="true"/>
+<service android:name="de.appwerft.audiocontrols.NotificationService" android:enabled="true" android:exported="true"/>
+```
+
+
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
 
 
