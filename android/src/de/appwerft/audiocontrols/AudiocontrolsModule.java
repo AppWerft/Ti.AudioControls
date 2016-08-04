@@ -36,9 +36,9 @@ public class AudiocontrolsModule extends KrollModule {
 	private int lollipop = 1;
 	private Intent lockscreenService;
 	KrollFunction onKeypressedCallback = null;
-	private HeadSetReceiver mediakeyListener;
-	private NotificationReceiver notificationListener;
-	private AudioControlWidgetReceiver headsetAudiocontrolListener;
+	private HeadsetEventListener headsetEventListener;
+	private NotificationEventListener notificationEventListener;
+	private LockscreenwidgetEventListener lockscreenwidgetEventListener;
 	Boolean lockscreenEnabled = false;
 	Boolean notificationEnabled = true;
 	Boolean headsetEnabled = true;
@@ -47,13 +47,12 @@ public class AudiocontrolsModule extends KrollModule {
 
 	public AudiocontrolsModule() {
 		super();
-		mediakeyListener = new HeadSetReceiver();
+		headsetEventListener = new HeadsetEventListener();
 		intentFilterForMediaButton = new IntentFilter(
 				Intent.ACTION_MEDIA_BUTTON);
 		intentFilterForMediaButton
 				.addAction("android.intent.action.ACTION_MEDIA_BUTTON");
 		intentFilterForMediaButton.setPriority(10000);
-		headsetAudiocontrolListener = new AudioControlWidgetReceiver();
 		ctx = TiApplication.getInstance().getApplicationContext();
 	}
 
@@ -65,12 +64,12 @@ public class AudiocontrolsModule extends KrollModule {
 	@Override
 	public void onDestroy(Activity activity) {
 		TiApplication.getInstance().stopService(lockscreenService);
-		if (mediakeyListener != null)
-			ctx.unregisterReceiver(mediakeyListener);
-		if (headsetAudiocontrolListener != null)
-			ctx.unregisterReceiver(headsetAudiocontrolListener);
-		if (notificationListener != null)
-			ctx.unregisterReceiver(notificationListener);
+		if (headsetEventListener != null)
+			ctx.unregisterReceiver(headsetEventListener);
+		if (lockscreenwidgetEventListener != null)
+			ctx.unregisterReceiver(lockscreenwidgetEventListener);
+		if (notificationEventListener != null)
+			ctx.unregisterReceiver(notificationEventListener);
 		if (audioControlNotification != null)
 			audioControlNotification.cancelNotification();
 		super.onDestroy(activity);
@@ -120,8 +119,6 @@ public class AudiocontrolsModule extends KrollModule {
 		this.getOptions(opts);
 
 		/* registering of broadcastreceiver for results */
-		IntentFilter filter = new IntentFilter(ctx.getPackageName());
-		ctx.registerReceiver(headsetAudiocontrolListener, filter);
 		final int VERSION = Build.VERSION.SDK_INT;
 		Log.d(LCAT, ">>>>>>>>> AP Version=" + VERSION + "   lollipop="
 				+ WIDGET_LOCKSCREEN);
@@ -135,32 +132,43 @@ public class AudiocontrolsModule extends KrollModule {
 				intent.putExtra("artist", artist);
 				intent.putExtra("image", image);
 				ctx.startService(intent);
-
+				/* and start of receiver for buttons */
+				if (lockscreenwidgetEventListener == null) {
+					lockscreenwidgetEventListener = new LockscreenwidgetEventListener();
+					IntentFilter filter = new IntentFilter(ctx.getPackageName());
+					ctx.registerReceiver(lockscreenwidgetEventListener, filter);
+				}
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
-
 		}
 		if (VERSION > 22
 				|| ((VERSION == 21 || VERSION == 22) && lollipop == WIDGET_NOTIFICATION)) {
-			if (audioControlNotification == null) { // singleton for poor man
-				Log.d(LCAT, "NotificationView started");
-				audioControlNotification = new AudioControlNotification(ctx);
-			} else {
-				Log.d(LCAT,
-						">>>>>>  call audioControlNotification.updateContent");
-				audioControlNotification.updateContent(image, title, artist);
+			try {
+				/* starting of service for it */
+				Intent intent = new Intent(ctx, NotificationService.class);
+				intent.putExtra("title", title);
+				intent.putExtra("artist", artist);
+				intent.putExtra("image", image);
+				ctx.startService(intent);
+				/* and start of receiver for buttons (first time) */
+				if (notificationEventListener == null) {
+					NotificationEventListener notificationEventListener = new NotificationEventListener();
+					IntentFilter filter = new IntentFilter(
+							"de.appwerft.audiocontrols.PLAY");
+					filter.addAction("PLAYCONTROL");
+					ctx.registerReceiver(notificationEventListener, filter);
+				}
+			} catch (Exception ex) {
+				Log.e(LCAT, "Exception caught:" + ex);
 			}
-			NotificationReceiver notificationReceiver = new NotificationReceiver();
-			final IntentFilter playFilter = new IntentFilter(
-					"de.appwerft.audiocontrols.PLAY");
-			final IntentFilter prevFilter = new IntentFilter();
-			final IntentFilter nextFilter = new IntentFilter();
-			IntentFilter myfilter = new IntentFilter();
-			myfilter.addAction("PLAYCONTROL");
-			// ctx.registerReceiver(notificationReceiver, playFilter);
-			ctx.registerReceiver(notificationReceiver, myfilter);
-			// ctx.registerReceiver(notificationReceiver, nextFilter);
+			/*
+			 * if (audioControlNotification == null) { // singleton for poor man
+			 * Log.d(LCAT, "NotificationView started"); audioControlNotification
+			 * = new AudioControlNotification(ctx); } else { Log.d(LCAT,
+			 * ">>>>>>  call audioControlNotification.updateContent");
+			 * audioControlNotification.updateContent(image, title, artist); }
+			 */
 		}
 	}
 
@@ -168,14 +176,14 @@ public class AudiocontrolsModule extends KrollModule {
 	public void addEventListener(String eventname, KrollFunction callback) {
 		if (eventname != null && callback != null) {
 			onKeypressedCallback = callback;
-			ctx.registerReceiver(mediakeyListener, intentFilterForMediaButton);
+			ctx.registerReceiver(headsetEventListener,
+					intentFilterForMediaButton);
 		}
-
 	}
 
 	@Kroll.method
 	public void removeEventListener(String eventname) {
-		ctx.unregisterReceiver(mediakeyListener);
+		ctx.unregisterReceiver(headsetEventListener);
 	}
 
 	@Kroll.method
@@ -200,7 +208,7 @@ public class AudiocontrolsModule extends KrollModule {
 	/*
 	 * This Receiver is for events from hardware button on Headset
 	 */
-	private class HeadSetReceiver extends BroadcastReceiver {
+	private class HeadsetEventListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
 			if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
@@ -219,7 +227,7 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	/* with this receiver we read the events from controlUI */
-	private class AudioControlWidgetReceiver extends BroadcastReceiver {
+	private class LockscreenwidgetEventListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
 			final String audiocontrolercmd;
@@ -244,10 +252,10 @@ public class AudiocontrolsModule extends KrollModule {
 	/*
 	 * For testing: adb shell am broadcast -a de.appwerft.audiocontrols.PLAY
 	 */
-	public class NotificationReceiver extends BroadcastReceiver {
+	public class NotificationEventListener extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			Log.d(LCAT, NotificationReceiver.class.getSimpleName(),
+			Log.d(LCAT, NotificationEventListener.class.getSimpleName(),
 					"received broadcast");
 			String pn = "de.appwerft.audiocontrols";
 			String action = intent.getAction();
