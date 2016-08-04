@@ -3,9 +3,8 @@
 
 This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player) by headset, lockscreen and/or notification bar.
 
-Thanks to [inFocusmedia  in Kalmar](http://www.infocusmedia.se/app/)    for sponsoring and Jonas Thoor for patience and support. 
-
- <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=20/>
+Thanks to [inFocusmedia  in Kalmar](http://www.infocusmedia.se/app/)  <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=20/>
+ for sponsoring and Jonas Thoor for patience and support. 
 
 
 ![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
