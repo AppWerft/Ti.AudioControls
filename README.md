@@ -13,6 +13,14 @@ View over lockscreen only works for devices ≤ Lollipop and player control as n
 
 It is still in work.
 
+The module has 3 functionalities:
+
+1. Building the widgets
+2. Updating the content
+3. listening to button events
+4. listening to hardware buttons on headset
+
+
 ##Interface
 
 ```javascript
