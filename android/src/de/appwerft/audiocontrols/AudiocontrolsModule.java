@@ -6,7 +6,6 @@ import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,16 +31,14 @@ public class AudiocontrolsModule extends KrollModule {
 	AudioControlWidget audioControlWidget;
 	final String LCAT = "RemAudioScreen ♛♛♛";
 	final int NOTIFICATION_ID = 1;
-	private int lollipop = 1;
+	private static int lollipop = 1;
 	private Intent lockscreenService;
-	KrollFunction onKeypressedCallback = null;
+	static KrollFunction onKeypressedCallback = null;
 	private HeadsetEventListener headsetEventListener;
 	private NotificationEventListener notificationEventListener;
 	private LockscreenwidgetEventListener lockscreenwidgetEventListener;
-	Boolean lockscreenEnabled = false;
-	Boolean notificationEnabled = true;
-	Boolean headsetEnabled = true;
-	private String title, artist, image;
+
+	private static String title, artist, image;
 	AudioControlNotification audioControlNotification;
 
 	public AudiocontrolsModule() {
@@ -63,14 +60,18 @@ public class AudiocontrolsModule extends KrollModule {
 	@Override
 	public void onDestroy(Activity activity) {
 		TiApplication.getInstance().stopService(lockscreenService);
-		if (headsetEventListener != null)
+		if (headsetEventListener != null) {
+			Log.d(LCAT, "terminating headsetEventListener");
 			ctx.unregisterReceiver(headsetEventListener);
-		if (lockscreenwidgetEventListener != null)
+		}
+		if (lockscreenwidgetEventListener != null) {
+			Log.d(LCAT, "terminating lockscreenwidgetEventListener");
 			ctx.unregisterReceiver(lockscreenwidgetEventListener);
-		if (notificationEventListener != null)
+		}
+		if (notificationEventListener != null) {
+			Log.d(LCAT, "terminating notificationEventListener");
 			ctx.unregisterReceiver(notificationEventListener);
-		if (audioControlNotification != null)
-			audioControlNotification.cancelNotification();
+		}
 		super.onDestroy(activity);
 	}
 
@@ -89,6 +90,7 @@ public class AudiocontrolsModule extends KrollModule {
 		}
 		if (opts.containsKeyAndNotNull("lollipop")) {
 			lollipop = opts.getInt("lollipop");
+			Log.d(LCAT, "lollipop=" + lollipop);
 		}
 		/* callback for buttons */
 		if (opts.containsKeyAndNotNull("onKeypressed")) {
@@ -96,13 +98,6 @@ public class AudiocontrolsModule extends KrollModule {
 			if (cb instanceof KrollFunction) {
 				onKeypressedCallback = (KrollFunction) cb;
 			}
-		}
-		/* both kinds of UI */
-		if (opts.containsKeyAndNotNull("lockscreenEnabled")) {
-			lockscreenEnabled = opts.getBoolean("lockscreenEnabled");
-		}
-		if (opts.containsKeyAndNotNull("notificationEnabled")) {
-			notificationEnabled = opts.getBoolean("notificationEnabled");
 		}
 	}
 
@@ -113,16 +108,27 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	@Kroll.method
+	public void removeRemoteAudioControl(KrollDict opts) {
+		Intent intent = new Intent();
+		intent.setAction(NotificationService.ACTION);
+		intent.putExtra(NotificationService.STOP_SERVICE_BROADCAST_KEY,
+				NotificationService.RQS_STOP_SERVICE);
+		ctx.sendBroadcast(intent);
+	}
+
+	private boolean supportsBothWidgets() {
+		return (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP || Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1) ? true
+				: false;
+	}
+
+	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
 		/* all options will read from Javascript and save as class vars */
-		this.getOptions(opts);
-
+		getOptions(opts);
 		/* registering of broadcastreceiver for results */
-		final int VERSION = Build.VERSION.SDK_INT;
-		Log.d(LCAT, ">>>>>>>>> AP Version=" + VERSION + "   lollipop="
-				+ WIDGET_LOCKSCREEN);
-		if (VERSION < 21
-				|| ((VERSION == 21 || VERSION == 22) && lollipop == WIDGET_LOCKSCREEN)) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
+				|| supportsBothWidgets() == true
+				&& lollipop == WIDGET_LOCKSCREEN) {
 			Log.d(LCAT, "LockscreenView started");
 			try {
 				/* starting of service for it */
@@ -141,8 +147,9 @@ public class AudiocontrolsModule extends KrollModule {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
 		}
-		if (VERSION > 22
-				|| ((VERSION == 21 || VERSION == 22) && lollipop == WIDGET_NOTIFICATION)) {
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
+				|| supportsBothWidgets() == true
+				&& lollipop == WIDGET_NOTIFICATION) {
 			try {
 				/* starting of service for it */
 				Intent intent = new Intent(ctx, NotificationService.class);
@@ -161,15 +168,6 @@ public class AudiocontrolsModule extends KrollModule {
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
-		}
-	}
-
-	@Kroll.method
-	public void addEventListener(String eventname, KrollFunction callback) {
-		if (eventname != null && callback != null) {
-			onKeypressedCallback = callback;
-			ctx.registerReceiver(headsetEventListener,
-					intentFilterForMediaButton);
 		}
 	}
 

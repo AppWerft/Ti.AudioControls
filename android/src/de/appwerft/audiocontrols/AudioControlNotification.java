@@ -76,6 +76,7 @@ class AudioControlNotification {
 		notification.contentView.setTextViewText(artistId, artist);
 		notification.contentView.setTextViewText(titleId, title);
 		ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton
+																// instance
 		imageLoader.loadImage(imageUrl, new SimpleImageLoadingListener() {
 			@Override
 			public void onLoadingComplete(String imageUri, View view,
@@ -93,16 +94,16 @@ class AudioControlNotification {
 		Intent intent = new Intent();
 		intent.setClass(
 				ctx,
-				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationEventListener.class);
 		intent.putExtra("cmd", "play");
 
 		Intent prevIntent = new Intent(
 				ctx,
-				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationEventListener.class);
 		prevIntent.setAction("goPREV");
 		Intent nextIntent = new Intent(
 				ctx,
-				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationReceiver.class);
+				de.appwerft.audiocontrols.AudiocontrolsModule.NotificationEventListener.class);
 		prevIntent.setAction("goNEXT");
 
 		// https://developer.android.com/reference/android/widget/RemoteViews.html#setOnClickPendingIntent(int,%20android.app.PendingIntent)
