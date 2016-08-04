@@ -5,7 +5,7 @@ This Titanium module is for control of Ti.Media.Audioplayer (or Kosso's' player)
 
 Thanks to [inFocusmedia  in Kalmar](http://www.infocusmedia.se/app/)    for sponsoring and Jonas Thoor for patience and support. 
 
- <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=40/>
+ <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=20/>
 
 
 <img src="https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/lsr.png" width="600">
@@ -39,8 +39,8 @@ var AudioControls = require("de.appwerft.audiocontrols");
 Your manifest needs to entries:
 
 ```xml
-<service android:name="de.appwerft.audiocontrols.LockScreenService" android:enabled="true" android:exported="true"/>
-<service android:name="de.appwerft.audiocontrols.NotificationService" android:enabled="true" android:exported="true"/>
+<service android:name=".LockScreenService" android:enabled="true" android:exported="true"/>
+<service android:name=".NotificationService" android:enabled="true" android:exported="true"/>
 ```
 
 
