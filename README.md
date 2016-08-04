@@ -8,8 +8,7 @@ Thanks to [inFocusmedia  in Kalmar](http://www.infocusmedia.se/app/)    for spon
  <img src="http://www.infocusmedia.se/wp-content/themes/ifom/images/logo_ifom_01.png" height=20/>
 
 
-<img src="https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/lsr.png" width="600">
-
+![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
 
 View over lockscreen only works for devices ≤ Lollipop and player control as notification only works with API level ≥ Lollipop. Therefore the module uses a property "lollipop" to decide, which widget should work: "WIDGET_NOTIFICATION" or "WIDGET_LOCKSCREEN".
 
@@ -43,8 +42,7 @@ Your manifest needs to entries:
 <service android:name=".NotificationService" android:enabled="true" android:exported="true"/>
 ```
 
-
-![](https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/audiocontrol.png)
+<img src="https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/lsr.png" width="600">
 
 
 In older devices it opens a view over lockscreen  – in new devices an interactive notifiaction.
