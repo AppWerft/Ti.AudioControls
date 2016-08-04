@@ -162,13 +162,6 @@ public class AudiocontrolsModule extends KrollModule {
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
-			/*
-			 * if (audioControlNotification == null) { // singleton for poor man
-			 * Log.d(LCAT, "NotificationView started"); audioControlNotification
-			 * = new AudioControlNotification(ctx); } else { Log.d(LCAT,
-			 * ">>>>>>  call audioControlNotification.updateContent");
-			 * audioControlNotification.updateContent(image, title, artist); }
-			 */
 		}
 	}
 
