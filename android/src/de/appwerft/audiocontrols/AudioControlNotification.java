@@ -12,9 +12,6 @@ import android.support.v4.app.NotificationCompat;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import com.nostra13.universalimageloader.core.ImageLoader;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
-
 class AudioControlNotification {
 	final int NOTIFICATION_ID = 1337;
 	final String LCAT = "LockAudioScreen 😇😇😇";
@@ -72,19 +69,7 @@ class AudioControlNotification {
 	};
 
 	public void updateContent(String imageUrl, String title, String artist) {
-		Log.d(LCAT, "inside audioControlNotification.updateContent");
-		notification.contentView.setTextViewText(artistId, artist);
-		notification.contentView.setTextViewText(titleId, title);
-		ImageLoader imageLoader = ImageLoader.getInstance(); // Get singleton
-																// instance
-		imageLoader.loadImage(imageUrl, new SimpleImageLoadingListener() {
-			@Override
-			public void onLoadingComplete(String imageUri, View view,
-					Bitmap loadedImage) {
-				notification.contentView.setImageViewBitmap(coverimageId,
-						loadedImage);
-			}
-		});
+
 		notificationManager.notify(NOTIFICATION_ID, notification);
 	}
 

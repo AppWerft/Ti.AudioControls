@@ -3,7 +3,6 @@ package de.appwerft.audiocontrols;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -11,7 +10,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ResultReceiver;
@@ -20,6 +20,8 @@ import android.widget.RemoteViews;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.NotificationTarget;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 public class NotificationService extends Service {
 	final static String ACTION = "NotifyServiceAction";
@@ -33,7 +35,7 @@ public class NotificationService extends Service {
 
 	private NotificationTarget notificationTarget;
 	private NotificationManager notificationManager;
-	private RemoteViews view;
+
 	private RemoteViews remoteViews;
 
 	private NotificationCompat.Builder builder;
@@ -59,14 +61,15 @@ public class NotificationService extends Service {
 		prevcontrolId = R("prevCtrl", "id");
 		nextcontrolId = R("nextCtrl", "id");
 		playcontrolId = R("playCtrl", "id");
+		coverimageId = R("coverimage", "id");
 		playiconId = R("android:ic_media_play", "drawable");
 		pauseiconId = R("android:ic_media_pause", "drawable");
 		/* for dynamic update: */
 		playiconId = R("android:ic_media_play", "drawable");
 		pauseiconId = R("android:ic_media_pause", "drawable");
-		view = new RemoteViews(ctx.getPackageName(), R(
+		remoteViews = new RemoteViews(ctx.getPackageName(), R(
 				"remoteaudiocontrol_notification", "layout"));
-		setButtonListeners(view, ctx);
+		// setButtonListeners(remoteViews, ctx);
 	}
 
 	@Override
@@ -118,27 +121,48 @@ public class NotificationService extends Service {
 		// intentNotif, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		// notification's layout
-		remoteViews = new RemoteViews(ctx.getPackageName(), R(
-				"remoteaudiocontrol_notification", "layout"));
+
 		builder = new NotificationCompat.Builder(ctx);
 		builder.setSmallIcon(R("notification_icon", "drawable"))
 				.setAutoCancel(false).setOngoing(true).setContentTitle("")
 				// .setContentIntent(pendIntent)
 				.setContent(remoteViews);
-		notificationTarget = new NotificationTarget(this, remoteViews,
-				coverimageId, builder.build(), NOTIFICATION_ID);
-		startForeground(NOTIFICATION_ID, builder.build());
+		notificationManager.notify(NOTIFICATION_ID, builder.build());
+
+		// startForeground(NOTIFICATION_ID, builder.build());
 	}
 
-	private void updateNotification(Bundle bundle) {
-		Log.d(LCAT, "inside audioControlNotification.updateContent");
-		remoteViews.setTextViewText(artistId, bundle.getString("artist"));
-		remoteViews.setTextViewText(titleId, bundle.getString("title"));
-		notificationManager.notify(NOTIFICATION_ID, builder.build());
+	private void updateNotification(final Bundle bundle) {
 		final String image = bundle.getString("image");
 		if (image != null) {
-			Glide.with(this).load(image).asBitmap().into(notificationTarget);
-			// notificationManager.notify(NOTIFICATION_ID, builder.build());
+			final Target target = new Target() {
+				@Override
+				public void onBitmapLoaded(Bitmap bitmap,
+						Picasso.LoadedFrom from) {
+					remoteViews.setTextViewText(artistId,
+							bundle.getString("artist"));
+					remoteViews.setTextViewText(titleId,
+							bundle.getString("title"));
+					remoteViews.setImageViewBitmap(coverimageId, bitmap);
+					notificationManager
+							.notify(NOTIFICATION_ID, builder.build());
+
+					// loading of the bitmap was a success
+					// TODO do some action with the bitmap
+				}
+
+				@Override
+				public void onBitmapFailed(Drawable errorDrawable) {
+					Log.e(LCAT, "onBitmapFaile");
+
+				}
+
+				@Override
+				public void onPrepareLoad(Drawable placeHolderDrawable) {
+				}
+			};
+			Picasso.with(ctx).load(image).into(target);
+
 		} else {
 			Log.e(LCAT, "image is null in updateNotification ");
 		}
