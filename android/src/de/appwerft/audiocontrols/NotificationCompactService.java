@@ -22,11 +22,11 @@ import android.widget.RemoteViews;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-public class NotificationBigService extends Service {
+public class NotificationCompactService extends Service {
 	final static String ACTION = "NotifyServiceAction";
 	final static String STOP_SERVICE_BROADCAST_KEY = "StopServiceBroadcastKey";
 	final static int RQS_STOP_SERVICE = 1;
-	NotificationBigServiceReceiver notificationServiceReceiver;
+	NotificationCompactServiceReceiver notificationServiceReceiver;
 	ResultReceiver resultReceiver;
 	Resources res;
 	String packageName;
@@ -51,7 +51,7 @@ public class NotificationBigService extends Service {
 	int playiconId, pauseiconId;
 
 	// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
-	public NotificationBigService() {
+	public NotificationCompactService() {
 		super();
 		ctx = TiApplication.getInstance().getApplicationContext();
 		res = ctx.getResources();
@@ -73,7 +73,7 @@ public class NotificationBigService extends Service {
 	public void onCreate() {
 		Log.d(LCAT,
 				"LockscreenService created => new notificationServiceReceiver");
-		notificationServiceReceiver = new NotificationBigServiceReceiver();
+		notificationServiceReceiver = new NotificationCompactServiceReceiver();
 		super.onCreate();
 	}
 
@@ -84,29 +84,11 @@ public class NotificationBigService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (builder == null)
-			createNotification();
+		setUpNotification();
 		if (intent != null && intent.hasExtra("title")) {
 			updateNotification(intent.getExtras());
 		}
 		return START_STICKY;
-	}
-
-	private void createNotification() {
-		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
-		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		builder = new NotificationCompat.Builder(ctx);
-		builder.setSmallIcon(R("notification_icon", "drawable"))
-				.setAutoCancel(false).setOngoing(true).setColor(Color.DKGRAY)
-				.setPriority(NotificationCompat.PRIORITY_HIGH)
-				.setContentTitle("ContentTitle").setContentText("ContentText");
-		bigTextNotification = new NotificationCompat.BigTextStyle();
-		bigTextNotification.setBigContentTitle("Title");
-		bigTextNotification.bigText("Title");
-		builder.setStyle(bigTextNotification);
-		setAudioControlActions("ic_play");
-		notificationManager.notify(NOTIFICATION_ID, builder.build());
-
 	}
 
 	private PendingIntent createPendingIntent(String msg) {
@@ -120,46 +102,42 @@ public class NotificationBigService extends Service {
 		return pendIntent;
 	}
 
-	private void setAudioControlActions(String id) {
-		builder.mActions.clear();
-		builder.addAction(R("ic_prev", "drawable"), "",
-				createPendingIntent("prev"));
-		builder.addAction(R(id, "drawable"), "", createPendingIntent("play"));
-		builder.addAction(R("ic_next", "drawable"), "",
-				createPendingIntent("next"));
+	private void setUpNotification() {
+		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		builder = new NotificationCompat.Builder(ctx);
+		builder.setSmallIcon(R("notification_icon", "drawable"))
+				.setAutoCancel(false).setOngoing(true).setContentTitle("")
+				// .setContentIntent(pendIntent)
+				.setContent(remoteViews);
+		notificationManager.notify(NOTIFICATION_ID, builder.build());
+		// startForeground(NOTIFICATION_ID, builder.build());
+
+		if (!playintentdone) {
+			setCompactButtonListener(playcontrolId, "play");
+			playintentdone = true;
+		}
+		if (!previntentdone) {
+			setCompactButtonListener(prevcontrolId, "prev");
+			previntentdone = true;
+		}
+		if (!nextintentdone) {
+			setCompactButtonListener(nextcontrolId, "next");
+			nextintentdone = true;
+		}
 	}
 
 	private void updateNotification(final Bundle bundle) {
-		final String title = bundle.getString("title");
-		final String artist = bundle.getString("artist");
-		final String image = bundle.getString("image");
-
-		if (title != null) {
-			bigTextNotification.setBigContentTitle(title);
-			bigTextNotification.bigText(artist);
-		}
-		if (artist != null) {
-			builder.setContentTitle(title);
-			builder.setContentText(artist);
-		}
-
-		if (bundle.getString("state") != null) {
-			final int state = Integer.parseInt(bundle.getString("state"));
-			if (state == AudiocontrolsModule.STATE_PLAYING) {
-				setAudioControlActions("ic_stop");
-			}
-			if (state == AudiocontrolsModule.STATE_STOP) {
-				setAudioControlActions("ic_play");
-			}
-		}
+		remoteViews.setTextViewText(artistId, bundle.getString("artist"));
+		remoteViews.setTextViewText(titleId, bundle.getString("title"));
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
-
+		final String image = bundle.getString("image");
 		if (image != null) {
 			final Target target = new Target() {
 				@Override
 				public void onBitmapLoaded(Bitmap bitmap,
 						Picasso.LoadedFrom from) {
-					builder.setLargeIcon(bitmap);
+					remoteViews.setImageViewBitmap(coverimageId, bitmap);
 					notificationManager
 							.notify(NOTIFICATION_ID, builder.build());
 				}
@@ -179,7 +157,7 @@ public class NotificationBigService extends Service {
 		}
 	}
 
-	public class NotificationBigServiceReceiver extends BroadcastReceiver {
+	public class NotificationCompactServiceReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
 			int rqs = intent.getIntExtra(STOP_SERVICE_BROADCAST_KEY, 0);
@@ -202,4 +180,18 @@ public class NotificationBigService extends Service {
 		}
 		return id;
 	}
+
+	private void setCompactButtonListener(int id, String msg) {
+		/* same intent as in AudioControlWidget */
+		Intent intent = new Intent();
+		intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+		intent.setAction(ctx.getPackageName());
+		intent.putExtra(AudiocontrolsModule.AUDIOCONTROL_COMMAND, msg);
+		PendingIntent pendIntent = PendingIntent.getBroadcast(ctx, id, intent,
+				PendingIntent.FLAG_UPDATE_CURRENT);
+		remoteViews.setOnClickPendingIntent(id, pendIntent);
+		// ctx.sendBroadcast(intent);
+
+	}
+
 }

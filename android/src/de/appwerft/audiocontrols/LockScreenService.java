@@ -72,9 +72,7 @@ public class LockScreenService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null) {
 			Log.d(LCAT, "onStartCommand ");
-			audioControlWidget.updateContent(intent.getStringExtra("image"),
-					intent.getStringExtra("title"),
-					intent.getStringExtra("artist"));
+			audioControlWidget.updateContent(intent.getExtras());
 		}
 		return START_STICKY;
 	}

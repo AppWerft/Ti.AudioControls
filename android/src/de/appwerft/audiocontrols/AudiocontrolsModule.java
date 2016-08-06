@@ -6,11 +6,13 @@ import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
 import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.session.MediaSession;
 import android.os.Build;
 import android.os.Vibrator;
 import android.view.KeyEvent;
@@ -25,30 +27,31 @@ public class AudiocontrolsModule extends KrollModule {
 	final int WIDGET_POSITION_TOP = 0;
 	@Kroll.constant
 	final int WIDGET_POSITION_BOTTOM = 1;
+	@Kroll.constant
+	final public static int STATE_STOP = 0;
+	@Kroll.constant
+	final public static int STATE_PLAYING = 2;
+
 	Context ctx;
-	private IntentFilter intentFilterForMediaButton;
+	public static String AUDIOCONTROL_COMMAND = "AUDIOCONTROL_COMMAND";
 	public static String rootActivityClassName = "";
 	AudioControlWidget audioControlWidget;
-	final String LCAT = "RemAudioScreen ♛♛♛";
+	final String LCAT = "RemAudio ♛♛♛";
 	final int NOTIFICATION_ID = 1;
 	private static int lollipop = 1;
+	private static int state = 0;
+
 	private Intent lockscreenService;
 	static KrollFunction onKeypressedCallback = null;
 	private HeadsetEventListener headsetEventListener;
-	private NotificationEventListener notificationEventListener;
-	private LockscreenwidgetEventListener lockscreenwidgetEventListener;
+
+	private RemoteAudioControlEventLister remoteAudioControlEventLister;
 
 	private static String title, artist, image;
-	AudioControlNotification audioControlNotification;
 
 	public AudiocontrolsModule() {
 		super();
-		headsetEventListener = new HeadsetEventListener();
-		intentFilterForMediaButton = new IntentFilter(
-				Intent.ACTION_MEDIA_BUTTON);
-		intentFilterForMediaButton
-				.addAction("android.intent.action.ACTION_MEDIA_BUTTON");
-		intentFilterForMediaButton.setPriority(10000);
+
 		ctx = TiApplication.getInstance().getApplicationContext();
 	}
 
@@ -64,55 +67,53 @@ public class AudiocontrolsModule extends KrollModule {
 			Log.d(LCAT, "terminating headsetEventListener");
 			ctx.unregisterReceiver(headsetEventListener);
 		}
-		if (lockscreenwidgetEventListener != null) {
-			Log.d(LCAT, "terminating lockscreenwidgetEventListener");
-			ctx.unregisterReceiver(lockscreenwidgetEventListener);
+		if (remoteAudioControlEventLister != null) {
+			Log.d(LCAT, "terminating remoteAudioControlEventLister");
+			ctx.unregisterReceiver(remoteAudioControlEventLister);
 		}
-		if (notificationEventListener != null) {
-			Log.d(LCAT, "terminating notificationEventListener");
-			ctx.unregisterReceiver(notificationEventListener);
-		}
+
 		super.onDestroy(activity);
 	}
 
 	/* read all paramters from JS-side and save into vars in this class */
 	private void getOptions(KrollDict opts) {
-		if (opts == null)
-			return;
-		if (opts.containsKeyAndNotNull("title")) {
-			title = opts.getString("title");
-		}
-		if (opts.containsKeyAndNotNull("artist")) {
-			artist = opts.getString("artist");
-		}
-		if (opts.containsKeyAndNotNull("image")) {
-			image = opts.getString("image");
-		}
-		if (opts.containsKeyAndNotNull("lollipop")) {
-			lollipop = opts.getInt("lollipop");
-			Log.d(LCAT, "lollipop=" + lollipop);
-		}
-		/* callback for buttons */
-		if (opts.containsKeyAndNotNull("onKeypressed")) {
-			Object cb = opts.get("onKeypressed");
-			if (cb instanceof KrollFunction) {
-				onKeypressedCallback = (KrollFunction) cb;
+		if (opts != null && opts instanceof KrollDict) {
+			if (opts.containsKeyAndNotNull("title")) {
+				title = opts.getString("title");
+			}
+			if (opts.containsKeyAndNotNull("artist")) {
+				artist = opts.getString("artist");
+			}
+			if (opts.containsKeyAndNotNull("image")) {
+				image = opts.getString("image");
+			}
+			if (opts.containsKeyAndNotNull("lollipop")) {
+				lollipop = opts.getInt("lollipop");
+			}
+			if (opts.containsKeyAndNotNull("state")) {
+				state = opts.getInt("state");
+			}
+			/* callback for buttons */
+			if (opts.containsKeyAndNotNull("onKeypressed")) {
+				Object cb = opts.get("onKeypressed");
+				if (cb instanceof KrollFunction) {
+					onKeypressedCallback = (KrollFunction) cb;
+				}
 			}
 		}
 	}
 
 	@Kroll.method
 	public void updateRemoteAudioControl(KrollDict opts) {
-		Log.d(LCAT, "inside updateRemoteAudioControl");
 		this.createRemoteAudioControl(opts);
 	}
 
 	@Kroll.method
 	public void removeRemoteAudioControl(KrollDict opts) {
 		Intent intent = new Intent();
-		intent.setAction(NotificationService.ACTION);
-		intent.putExtra(NotificationService.STOP_SERVICE_BROADCAST_KEY,
-				NotificationService.RQS_STOP_SERVICE);
+		intent.setAction(NotificationBigService.ACTION);
+		intent.putExtra(NotificationBigService.STOP_SERVICE_BROADCAST_KEY,
+				NotificationBigService.RQS_STOP_SERVICE);
 		ctx.sendBroadcast(intent);
 	}
 
@@ -133,16 +134,16 @@ public class AudiocontrolsModule extends KrollModule {
 			try {
 				/* starting of service for it */
 				Intent intent = new Intent(ctx, LockScreenService.class);
-				intent.putExtra("title", title);
-				intent.putExtra("artist", artist);
-				intent.putExtra("image", image);
+				if (title != null)
+					intent.putExtra("title", title);
+				if (artist != null)
+					intent.putExtra("artist", artist);
+				if (image != null)
+					intent.putExtra("image", image);
+				intent.putExtra("state", Integer.toString(state));
 				ctx.startService(intent);
 				/* and start of receiver for buttons */
-				if (lockscreenwidgetEventListener == null) {
-					lockscreenwidgetEventListener = new LockscreenwidgetEventListener();
-					IntentFilter filter = new IntentFilter(ctx.getPackageName());
-					ctx.registerReceiver(lockscreenwidgetEventListener, filter);
-				}
+
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
@@ -152,22 +153,39 @@ public class AudiocontrolsModule extends KrollModule {
 				&& lollipop == WIDGET_NOTIFICATION) {
 			try {
 				/* starting of service for it */
-				Intent intent = new Intent(ctx, NotificationService.class);
-				intent.putExtra("title", title);
-				intent.putExtra("artist", artist);
-				intent.putExtra("image", image);
+				Intent intent = new Intent(ctx, NotificationBigService.class);
+				if (title != null)
+					intent.putExtra("title", title);
+				if (artist != null)
+					intent.putExtra("artist", artist);
+				if (image != null)
+					intent.putExtra("image", image);
+				intent.putExtra("state", Integer.toString(state));
 				ctx.startService(intent);
 				/* and start of receiver for buttons (first time) */
-				if (notificationEventListener == null) {
-					NotificationEventListener notificationEventListener = new NotificationEventListener();
-					IntentFilter filter = new IntentFilter(
-							"de.appwerft.audiocontrols.PLAY");
-					filter.addAction("PLAYCONTROL");
-					ctx.registerReceiver(notificationEventListener, filter);
-				}
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
+		}
+		/* in all API levels: */
+		if (remoteAudioControlEventLister == null) {
+			remoteAudioControlEventLister = new RemoteAudioControlEventLister();
+			IntentFilter filter = new IntentFilter(ctx.getPackageName());
+			ctx.registerReceiver(remoteAudioControlEventLister, filter);
+			Log.d(LCAT, "remoteAudioControlEventLister started");
+		}
+		if (headsetEventListener == null) {
+			// http://www.programcreek.com/java-api-examples/index.php?api=android.media.session.MediaSession#23
+			/*
+			 * MediaSession mediaSession = new MediaSession(ctx, "NAme");
+			 * mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
+			 * // mediaSession.setMediaButtonReceiver(); IntentFilter filter =
+			 * new IntentFilter(Intent.ACTION_MEDIA_BUTTON); //
+			 * filter.addAction(Intent.ACTION_MEDIA_BUTTON);
+			 * filter.setPriority(999); ctx.registerReceiver(new
+			 * HeadsetEventListener(), filter);
+			 */
+
 		}
 	}
 
@@ -198,9 +216,14 @@ public class AudiocontrolsModule extends KrollModule {
 	/*
 	 * This Receiver is for events from hardware button on Headset
 	 */
-	private class HeadsetEventListener extends BroadcastReceiver {
+	public class HeadsetEventListener extends BroadcastReceiver {
+		public HeadsetEventListener() {
+			super();
+		}
+
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
+			Log.d(LCAT, "Headset is pressed: " + intent.toString());
 			if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
 				KeyEvent event = (KeyEvent) intent
 						.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
@@ -217,23 +240,19 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	/* with this receiver we read the events from controlUI */
-	private class LockscreenwidgetEventListener extends BroadcastReceiver {
+	public class RemoteAudioControlEventLister extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
 			final String audiocontrolercmd;
-			if (intent.getStringExtra("audiocontrolercmd") != null) {
-				audiocontrolercmd = "audio_"
-						+ intent.getStringExtra("audiocontrolercmd");
-				Log.d(LCAT, audiocontrolercmd);
+			if (intent.getStringExtra(AUDIOCONTROL_COMMAND) != null) {
+				Vibrator v = (Vibrator) ctx
+						.getSystemService(Context.VIBRATOR_SERVICE);
+				v.vibrate(20);
 				KrollDict dict = new KrollDict();
-				dict.put("keypressed", audiocontrolercmd);
+				dict.put("cmd", intent.getStringExtra(AUDIOCONTROL_COMMAND));
 				if (onKeypressedCallback != null
 						&& onKeypressedCallback instanceof KrollFunction) {
 					onKeypressedCallback.call(getKrollObject(), dict);
-				} else {
-					Log.e(LCAT,
-							"onKeypressedCallback is null or not Krollfunction "
-									+ onKeypressedCallback.toString());
 				}
 			}
 		}
@@ -242,25 +261,5 @@ public class AudiocontrolsModule extends KrollModule {
 	/*
 	 * For testing: adb shell am broadcast -a de.appwerft.audiocontrols.PLAY
 	 */
-	public class NotificationEventListener extends BroadcastReceiver {
-		@Override
-		public void onReceive(Context ctx, Intent intent) {
-			Log.d(LCAT, NotificationEventListener.class.getSimpleName(),
-					"received broadcast");
-			String pn = "de.appwerft.audiocontrols";
-			String action = intent.getAction();
-			Vibrator v = (Vibrator) ctx
-					.getSystemService(Context.VIBRATOR_SERVICE);
-			v.vibrate(50);
-			if (action.equalsIgnoreCase(pn + ".PLAY")) {
-				Log.d(LCAT, "►◼ pressed︎");
-				audioControlNotification.togglePlayButton();
-			} else if (action.equalsIgnoreCase(pn + ".NEXT")) {
-				Log.d(LCAT, "⇤ pressed︎");
-			} else if (action.equalsIgnoreCase(pn + ".PREV")) {
-				Log.d(LCAT, "⇥ pressed︎");
-			}
-		}
-	}
 
 }

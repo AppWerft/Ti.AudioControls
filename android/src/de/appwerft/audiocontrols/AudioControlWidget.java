@@ -3,11 +3,10 @@ package de.appwerft.audiocontrols;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.appcelerator.titanium.TiApplication;
-
 import android.content.Context;
 import android.content.Intent;
-import android.os.Vibrator;
+import android.os.Bundle;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,6 +17,7 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+/* it is class for LockscreenView, triggered from LockScreenService*/
 public class AudioControlWidget extends RelativeLayout {
 	ImageView coverView;
 	View container;
@@ -27,6 +27,8 @@ public class AudioControlWidget extends RelativeLayout {
 	ImageButton prevCtrl;
 	ImageButton nextCtrl;
 	Boolean isPlaying;
+	int playIcon, stopIcon;
+	float xScale, yScale;
 	int playCtrlId, nextCtrlId, prevCtrlId, placeholderId;
 	Context ctx;// = TiApplication.getInstance().getApplicationContext();
 	final String LCAT = "LockAudioScreen ♛♛♛";
@@ -62,6 +64,11 @@ public class AudioControlWidget extends RelativeLayout {
 				.findViewById(playCtrlId = getResId("playcontrol", "id"));
 		this.nextCtrl = (ImageButton) container
 				.findViewById(nextCtrlId = getResId("nextcontrol", "id"));
+
+		this.playIcon = getResId("android:drawable/ic_media_play", "drawable");
+		this.stopIcon = getResId("android:drawable/ic_media_paue", "drawable");
+		float xScale = this.playCtrl.getScaleX();
+		float yScale = this.playCtrl.getScaleY();
 		this.playCtrl.setOnClickListener(buttonListener);
 		this.prevCtrl.setOnClickListener(buttonListener);
 		this.nextCtrl.setOnClickListener(buttonListener);
@@ -90,14 +97,11 @@ public class AudioControlWidget extends RelativeLayout {
 				isPlaying = !isPlaying;
 
 			}
-			Vibrator v = (Vibrator) ctx
-					.getSystemService(Context.VIBRATOR_SERVICE);
-			v.vibrate(50);
+
 			Intent intent = new Intent();
 			intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
 			intent.setAction(ctx.getPackageName());
-			intent.putExtra("audiocontrolercmd", msg);
-			Log.d(LCAT, "try to send a message to KrollModule " + msg);
+			intent.putExtra(AudiocontrolsModule.AUDIOCONTROL_COMMAND, msg);
 			ctx.sendBroadcast(intent);
 			/*
 			 * Bundle bundle = new Bundle(); bundle.putString("lockscreen",
@@ -106,10 +110,12 @@ public class AudioControlWidget extends RelativeLayout {
 		}
 	};
 
-	public void updateContent(String imageUrl, String title, String artist) {
-		if (imageUrl == null || imageUrl.length() == 0)
-			return;
-		if (this.placeholderId > 0) {
+	public void updateContent(Bundle b) {
+		final String imageUrl = b.getString("image");
+		final String artist = b.getString("artist");
+		final String title = b.getString("title");
+
+		if (this.placeholderId > 0 && imageUrl != null) {
 			try {
 				@SuppressWarnings("unused")
 				URL dummy = new URL(imageUrl);
@@ -118,10 +124,26 @@ public class AudioControlWidget extends RelativeLayout {
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
-			this.titleView.setText(title);
-			this.artistView.setText(artist);
+
 		} else
 			Log.e(LCAT, "cannot resolve placeholder.png");
+		if (title != null)
+			this.titleView.setText(title);
+		if (artist != null)
+			this.artistView.setText(artist);
+		if (b.getString("state") != null) {
+			final int state = Integer.parseInt(b.getString("state"));
+
+			if (state == AudiocontrolsModule.STATE_PLAYING) {
+				this.playCtrl.setImageResource(stopIcon);
+			}
+			if (state == AudiocontrolsModule.STATE_STOP) {
+				this.playCtrl.setImageResource(playIcon);
+			}
+			this.playCtrl.setScaleX(xScale);
+			this.playCtrl.setScaleY(yScale);
+
+		}
 	}
 
 }
