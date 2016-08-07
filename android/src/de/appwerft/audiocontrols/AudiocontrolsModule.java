@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Vibrator;
-import de.appwerft.audiocontrols.services.*;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
