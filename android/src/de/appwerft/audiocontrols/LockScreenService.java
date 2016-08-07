@@ -42,7 +42,6 @@ public class LockScreenService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		Log.d(LCAT, "LockscreenService created");
 		audioControlWidget = new AudioControlWidget(ctx);
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -102,6 +101,8 @@ public class LockScreenService extends Service {
 
 	@Override
 	public void onDestroy() {
+		super.onDestroy();
+		stopSelf();
 		windowManager.removeView(audioControlWidget);
 		ctx.unregisterReceiver(lockScreenStateReceiver);
 	}

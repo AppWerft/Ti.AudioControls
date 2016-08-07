@@ -9,6 +9,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -24,8 +25,9 @@ import com.squareup.picasso.Target;
 
 public class NotificationBigService extends Service {
 	final static String ACTION = "NotifyServiceAction";
-	final static String STOP_SERVICE_BROADCAST_KEY = "StopServiceBroadcastKey";
+	final static String SERVICE_COMMAND_KEY = "ServiceCommandKey";
 	final static int RQS_STOP_SERVICE = 1;
+	final static int RQS_REMOVE_NOTIFICATION = 2;
 	NotificationBigServiceReceiver notificationServiceReceiver;
 	ResultReceiver resultReceiver;
 	Resources res;
@@ -74,6 +76,9 @@ public class NotificationBigService extends Service {
 		Log.d(LCAT,
 				"LockscreenService created => new notificationServiceReceiver");
 		notificationServiceReceiver = new NotificationBigServiceReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(ACTION);
+		ctx.registerReceiver(notificationServiceReceiver, filter);
 		super.onCreate();
 	}
 
@@ -182,11 +187,21 @@ public class NotificationBigService extends Service {
 	public class NotificationBigServiceReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			int rqs = intent.getIntExtra(STOP_SERVICE_BROADCAST_KEY, 0);
+			int rqs = intent.getIntExtra(SERVICE_COMMAND_KEY, 0);
+			Log.d(LCAT, ctx.getClass().getCanonicalName());
+			Log.d(LCAT, SERVICE_COMMAND_KEY + "==>" + rqs);
 			if (rqs == RQS_STOP_SERVICE) {
+				Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
 				stopSelf();
+				Log.d(LCAT, "stopSelf");
 				((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
 						.cancelAll();
+			}
+			if (rqs == RQS_REMOVE_NOTIFICATION) {
+				Log.d(LCAT, "RQS_REMOVE_NOTIFICATION received");
+				notificationManager.cancel(NOTIFICATION_ID);
+				Log.d(LCAT, "notificationManager.cancelAll()");
+
 			}
 		}
 	}

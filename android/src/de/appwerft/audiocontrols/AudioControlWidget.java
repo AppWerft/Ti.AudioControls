@@ -6,7 +6,6 @@ import java.net.URL;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,7 +32,7 @@ public class AudioControlWidget extends RelativeLayout {
 	Context ctx;// = TiApplication.getInstance().getApplicationContext();
 	final String LCAT = "LockAudioScreen ♛♛♛";
 
-	private int getResId(String name, String type) {
+	private int R(String name, String type) {
 		int id = 0;
 		try {
 			id = ctx.getResources().getIdentifier(name, type,
@@ -51,28 +50,25 @@ public class AudioControlWidget extends RelativeLayout {
 		LayoutInflater inflater = (LayoutInflater) ctx
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		container = inflater.inflate(
-				getResId("remoteaudiocontrol_lockscreen", "layout"), null);
-		this.coverView = (ImageView) container.findViewById(getResId(
-				"coverimage", "id"));
-		this.artistView = (TextView) container.findViewById(getResId("artist",
+				R("remoteaudiocontrol_lockscreen", "layout"), null);
+		this.coverView = (ImageView) container.findViewById(R("coverimage",
 				"id"));
-		this.titleView = (TextView) container.findViewById(getResId("title",
-				"id"));
-		this.prevCtrl = (ImageButton) container
-				.findViewById(prevCtrlId = getResId("prevcontrol", "id"));
-		this.playCtrl = (ImageButton) container
-				.findViewById(playCtrlId = getResId("playcontrol", "id"));
-		this.nextCtrl = (ImageButton) container
-				.findViewById(nextCtrlId = getResId("nextcontrol", "id"));
-
-		this.playIcon = getResId("android:drawable/ic_media_play", "drawable");
-		this.stopIcon = getResId("android:drawable/ic_media_paue", "drawable");
-		float xScale = this.playCtrl.getScaleX();
-		float yScale = this.playCtrl.getScaleY();
+		this.artistView = (TextView) container.findViewById(R("artist", "id"));
+		this.titleView = (TextView) container.findViewById(R("title", "id"));
+		this.prevCtrl = (ImageButton) container.findViewById(prevCtrlId = R(
+				"prevcontrol", "id"));
+		this.playCtrl = (ImageButton) container.findViewById(playCtrlId = R(
+				"playcontrol", "id"));
+		this.nextCtrl = (ImageButton) container.findViewById(nextCtrlId = R(
+				"nextcontrol", "id"));
+		this.playIcon = R("android:drawable/ic_media_play", "drawable");
+		this.stopIcon = R("android:drawable/ic_media_pause", "drawable");
+		this.xScale = this.playCtrl.getScaleX();
+		this.yScale = this.playCtrl.getScaleY();
 		this.playCtrl.setOnClickListener(buttonListener);
 		this.prevCtrl.setOnClickListener(buttonListener);
 		this.nextCtrl.setOnClickListener(buttonListener);
-		this.placeholderId = getResId("placeholder", "drawable");
+		this.placeholderId = R("placeholder", "drawable");
 		this.addView(container);
 	}
 
@@ -88,16 +84,7 @@ public class AudioControlWidget extends RelativeLayout {
 				msg = "forward";
 			if (id == playCtrlId) {
 				msg = "play";
-				int resId = ctx.getResources().getIdentifier(
-						(isPlaying == false) ? "android:ic_media_pause"
-								: "android:ic_media_play", "drawable", null);
-				if (resId != 0)
-					playCtrl.setImageDrawable(ctx.getResources().getDrawable(
-							resId));
-				isPlaying = !isPlaying;
-
 			}
-
 			Intent intent = new Intent();
 			intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
 			intent.setAction(ctx.getPackageName());
@@ -133,17 +120,16 @@ public class AudioControlWidget extends RelativeLayout {
 			this.artistView.setText(artist);
 		if (b.getString("state") != null) {
 			final int state = Integer.parseInt(b.getString("state"));
-
+			Log.d(LCAT, "parsed " + state);
 			if (state == AudiocontrolsModule.STATE_PLAYING) {
 				this.playCtrl.setImageResource(stopIcon);
-			}
-			if (state == AudiocontrolsModule.STATE_STOP) {
+			} else if (state == AudiocontrolsModule.STATE_STOP) {
 				this.playCtrl.setImageResource(playIcon);
+			} else {
+				Log.e(LCAT, "missing symbol");
 			}
 			this.playCtrl.setScaleX(xScale);
 			this.playCtrl.setScaleY(yScale);
-
 		}
 	}
-
 }

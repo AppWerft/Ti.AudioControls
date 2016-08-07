@@ -12,10 +12,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.session.MediaSession;
 import android.os.Build;
 import android.os.Vibrator;
-import android.view.KeyEvent;
+import de.appwerft.audiocontrols.services.*;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
@@ -43,7 +42,6 @@ public class AudiocontrolsModule extends KrollModule {
 
 	private Intent lockscreenService;
 	static KrollFunction onKeypressedCallback = null;
-	private HeadsetEventListener headsetEventListener;
 
 	private RemoteAudioControlEventLister remoteAudioControlEventLister;
 
@@ -60,18 +58,30 @@ public class AudiocontrolsModule extends KrollModule {
 
 	}
 
+	public void onPause(Activity activity) {
+		Log.d(LCAT, "onPause");
+		super.onPause(activity);
+	}
+
+	public void onStop(Activity activity) {
+		Log.d(LCAT, "onStop");
+		/*
+		 * TiApplication.getInstance().stopService(lockscreenService);
+		 * Log.d(LCAT, "TiApplication.getInst"); removeRemoteAudioControl();
+		 * Log.d(LCAT, "removeRemoteAudioCon"); if
+		 * (remoteAudioControlEventLister != null) { Log.d(LCAT,
+		 * "terminating remoteAudioControlEventLister");
+		 * ctx.unregisterReceiver(remoteAudioControlEventLister); }
+		 */
+		super.onStop(activity);
+	}
+
 	@Override
 	public void onDestroy(Activity activity) {
-		TiApplication.getInstance().stopService(lockscreenService);
-		if (headsetEventListener != null) {
-			Log.d(LCAT, "terminating headsetEventListener");
-			ctx.unregisterReceiver(headsetEventListener);
-		}
-		if (remoteAudioControlEventLister != null) {
-			Log.d(LCAT, "terminating remoteAudioControlEventLister");
-			ctx.unregisterReceiver(remoteAudioControlEventLister);
-		}
-
+		Log.d(LCAT, "onDestroy");
+		removeRemoteAudioControl();
+		stopNotificationService();
+		// TiApplication.getInstance().stopService(lockscreenService);
 		super.onDestroy(activity);
 	}
 
@@ -109,12 +119,26 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public void removeRemoteAudioControl(KrollDict opts) {
-		Intent intent = new Intent();
+	public void removeRemoteAudioControl() {
+		Log.d(LCAT, "removeRemoteAudioControl");
+		Intent intent = new Intent(ctx.getPackageName());
 		intent.setAction(NotificationBigService.ACTION);
-		intent.putExtra(NotificationBigService.STOP_SERVICE_BROADCAST_KEY,
+		intent.putExtra(NotificationBigService.SERVICE_COMMAND_KEY,
+				NotificationBigService.RQS_REMOVE_NOTIFICATION);
+
+		Log.d(LCAT, "RQS_STOP_SERVICE will send");
+		ctx.sendBroadcast(intent);
+		Log.d(LCAT, "RQS_STOP_SERVICE sent");
+
+	}
+
+	private void stopNotificationService() {
+		Intent intent = new Intent(ctx.getPackageName());
+		intent.setAction(NotificationBigService.ACTION);
+		intent.putExtra(NotificationBigService.SERVICE_COMMAND_KEY,
 				NotificationBigService.RQS_STOP_SERVICE);
 		ctx.sendBroadcast(intent);
+		Log.d(LCAT, "RQS_STOP_SERVICE sent");
 	}
 
 	private boolean supportsBothWidgets() {
@@ -174,24 +198,11 @@ public class AudiocontrolsModule extends KrollModule {
 			ctx.registerReceiver(remoteAudioControlEventLister, filter);
 			Log.d(LCAT, "remoteAudioControlEventLister started");
 		}
-		if (headsetEventListener == null) {
-			// http://www.programcreek.com/java-api-examples/index.php?api=android.media.session.MediaSession#23
-			/*
-			 * MediaSession mediaSession = new MediaSession(ctx, "NAme");
-			 * mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
-			 * // mediaSession.setMediaButtonReceiver(); IntentFilter filter =
-			 * new IntentFilter(Intent.ACTION_MEDIA_BUTTON); //
-			 * filter.addAction(Intent.ACTION_MEDIA_BUTTON);
-			 * filter.setPriority(999); ctx.registerReceiver(new
-			 * HeadsetEventListener(), filter);
-			 */
 
-		}
 	}
 
 	@Kroll.method
 	public void removeEventListener(String eventname) {
-		ctx.unregisterReceiver(headsetEventListener);
 	}
 
 	@Kroll.method
@@ -213,31 +224,6 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	// http://stackoverflow.com/questions/9056814/how-do-i-intercept-button-presses-on-the-headset-in-android
-	/*
-	 * This Receiver is for events from hardware button on Headset
-	 */
-	public class HeadsetEventListener extends BroadcastReceiver {
-		public HeadsetEventListener() {
-			super();
-		}
-
-		@Override
-		public void onReceive(Context ctx, Intent intent) {
-			Log.d(LCAT, "Headset is pressed: " + intent.toString());
-			if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
-				KeyEvent event = (KeyEvent) intent
-						.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-				if (event == null) {
-					return;
-				}
-				// if (event.getAction() == KeyEvent.ACTION_DOWN) {
-				KrollDict dict = new KrollDict();
-				dict.put("keycode", event.getKeyCode());
-				onKeypressedCallback.call(getKrollObject(), dict);
-				// }
-			}
-		}
-	}
 
 	/* with this receiver we read the events from controlUI */
 	public class RemoteAudioControlEventLister extends BroadcastReceiver {
