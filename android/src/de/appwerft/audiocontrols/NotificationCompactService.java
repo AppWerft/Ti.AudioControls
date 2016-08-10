@@ -11,7 +11,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -33,7 +32,6 @@ public class NotificationCompactService extends Service {
 	Context ctx;
 	Boolean isPendingintentStarted = false;
 	private NotificationManager notificationManager;
-	private NotificationCompat.BigTextStyle bigTextNotification;
 	private RemoteViews remoteViews;
 	private NotificationCompat.Builder builder;
 	final boolean PLAYING = true;

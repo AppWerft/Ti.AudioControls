@@ -73,7 +73,6 @@ public class AudioControlWidget extends RelativeLayout {
 	}
 
 	private OnClickListener buttonListener = new OnClickListener() {
-		@SuppressWarnings("deprecation")
 		@Override
 		public void onClick(View clicksource) {
 			int id = clicksource.getId();

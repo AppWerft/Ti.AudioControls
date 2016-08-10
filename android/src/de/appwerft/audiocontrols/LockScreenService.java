@@ -4,6 +4,8 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
+import de.appwerft.audiocontrols.NotificationBigService.NotificationBigServiceReceiver;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,7 +19,13 @@ import android.view.Gravity;
 import android.view.WindowManager;
 
 public class LockScreenService extends Service {
-	final String LCAT = "LockAudioScreen 😇😇😇";
+	final static String ACTION = "NotifyServiceAction";
+	final static String SERVICE_COMMAND_KEY = "ServiceCommandKey";
+	final static int RQS_STOP_SERVICE = 1;
+	final static int RQS_REMOVE_NOTIFICATION = 2;
+	LockscreenServiceReceiver lockscreenServiceReceiver;
+	boolean widgetVisible = false;
+	final String LCAT = "LockAudioScreen 📌📌";
 	WindowManager.LayoutParams layoutParams;
 	ResultReceiver resultReceiver;
 	private TiProperties appProperties;
@@ -42,6 +50,12 @@ public class LockScreenService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		widgetVisible = true;
+		lockscreenServiceReceiver = new LockscreenServiceReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(ACTION);
+		ctx.registerReceiver(lockscreenServiceReceiver, filter);
+
 		audioControlWidget = new AudioControlWidget(ctx);
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -62,9 +76,9 @@ public class LockScreenService extends Service {
 				: Gravity.BOTTOM;
 		layoutParams.alpha = 0.95f;
 		lockScreenStateReceiver = new LockScreenStateReceiver();
-		IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
-		filter.addAction(Intent.ACTION_USER_PRESENT);
-		ctx.registerReceiver(lockScreenStateReceiver, filter);
+		IntentFilter mfilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+		mfilter.addAction(Intent.ACTION_USER_PRESENT);
+		ctx.registerReceiver(lockScreenStateReceiver, mfilter);
 	}
 
 	@Override
@@ -84,13 +98,17 @@ public class LockScreenService extends Service {
 	public class LockScreenStateReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d(LCAT, "LockScreenStateReceiver received event");
 			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
+				Log.d(LCAT, "LockScreenStateReceiver ACTION_SCREEN_OFF");
 				// if screen is turn off show the controlview
 				if (!isShowing) {
+					Log.d(LCAT, "LockScreenStateReceiver  !isShowing");
 					windowManager.addView(audioControlWidget, layoutParams);
 					isShowing = true;
 				}
 			} else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
+				Log.d(LCAT, "LockScreenStateReceiver ACTION_USER_PRESENT");
 				if (isShowing) {
 					windowManager.removeViewImmediate(audioControlWidget);
 					isShowing = false;
@@ -103,9 +121,28 @@ public class LockScreenService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 		stopSelf();
-		windowManager.removeView(audioControlWidget);
 		ctx.unregisterReceiver(lockScreenStateReceiver);
 	}
-}
 
-//	
+	public class LockscreenServiceReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context ctx, Intent intent) {
+			int rqs = intent.getIntExtra(SERVICE_COMMAND_KEY, 0);
+			Log.d(LCAT, ctx.getClass().getCanonicalName());
+			Log.d(LCAT, SERVICE_COMMAND_KEY + "===============>" + rqs);
+			if (rqs == RQS_STOP_SERVICE) {
+				Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
+				stopSelf();
+			}
+			if (rqs == RQS_REMOVE_NOTIFICATION) {
+				Log.d(LCAT, "RQS_REMOVE_NOTIFICATION received");
+				if (isShowing) {
+					windowManager.removeView(audioControlWidget);
+					isShowing = false;
+				}
+				// windowManager.removeView(audioControlWidget);
+				// ctx.unregisterReceiver(lockScreenStateReceiver);
+			}
+		}
+	}
+}

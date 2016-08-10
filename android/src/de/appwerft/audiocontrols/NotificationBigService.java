@@ -25,9 +25,11 @@ import com.squareup.picasso.Target;
 
 public class NotificationBigService extends Service {
 	final static String ACTION = "NotifyServiceAction";
-	final static String SERVICE_COMMAND_KEY = "ServiceCommandKey";
+	final static String SERVICE_COMMAND_KEY = "SERVICE_COMMAND_KEY";
+	final static String NOTIFICATION_SETPROGRESS = "NOTIFICATION_SETPROGRESS";
 	final static int RQS_STOP_SERVICE = 1;
 	final static int RQS_REMOVE_NOTIFICATION = 2;
+
 	NotificationBigServiceReceiver notificationServiceReceiver;
 	ResultReceiver resultReceiver;
 	Resources res;
@@ -40,13 +42,10 @@ public class NotificationBigService extends Service {
 	private NotificationCompat.Builder builder;
 	final boolean PLAYING = true;
 	final boolean PAUSING = false;
-	boolean playintentdone = false;
-	boolean previntentdone = false;
-	boolean nextintentdone = false;
-
 	boolean state = PLAYING;
 	final int NOTIFICATION_ID = 1337;
 	final int REQUEST_CODE = 1337;
+	private boolean hasProgress;
 	final String LCAT = "NotificationBigService 👽👽";
 	int artistId, coverimageId, titleId, prevcontrolId, nextcontrolId,
 			playcontrolId;
@@ -88,28 +87,44 @@ public class NotificationBigService extends Service {
 	}
 
 	@Override
+	public boolean onUnbind(Intent intent) {
+		stopSelf();
+		return super.onUnbind(intent);
+	}
+
+	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (builder == null)
-			createNotification();
+			createNotification(intent.getExtras());
 		if (intent != null && intent.hasExtra("title")) {
 			updateNotification(intent.getExtras());
 		}
-		return START_STICKY;
+		return START_NOT_STICKY;
 	}
 
-	private void createNotification() {
+	private void createNotification(Bundle bundle) {
+		hasProgress = bundle.getBoolean("hasProgress");
+		final boolean hasActions = bundle.getBoolean("hasActions");
+		final int iconBackgroundColor = bundle.getInt("iconBackgroundColor");
+
 		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		builder = new NotificationCompat.Builder(ctx);
 		builder.setSmallIcon(R("notification_icon", "drawable"))
-				.setAutoCancel(false).setOngoing(true).setColor(Color.DKGRAY)
+				.setAutoCancel(false).setOngoing(true)
+				.setColor(iconBackgroundColor)
 				.setPriority(NotificationCompat.PRIORITY_HIGH)
 				.setContentTitle("ContentTitle").setContentText("ContentText");
-		bigTextNotification = new NotificationCompat.BigTextStyle();
-		bigTextNotification.setBigContentTitle("Title");
-		bigTextNotification.bigText("Title");
-		builder.setStyle(bigTextNotification);
-		setAudioControlActions("ic_play");
+		if (hasProgress) {
+			builder.setProgress(100, 0, false);
+		}
+		if (hasActions) {
+			bigTextNotification = new NotificationCompat.BigTextStyle();
+			bigTextNotification.setBigContentTitle("Title");
+			bigTextNotification.bigText("Title");
+			builder.setStyle(bigTextNotification);
+			setAudioControlActions("ic_play");
+		}
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
 
 	}
@@ -187,21 +202,30 @@ public class NotificationBigService extends Service {
 	public class NotificationBigServiceReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			int rqs = intent.getIntExtra(SERVICE_COMMAND_KEY, 0);
-			Log.d(LCAT, ctx.getClass().getCanonicalName());
-			Log.d(LCAT, SERVICE_COMMAND_KEY + "==>" + rqs);
-			if (rqs == RQS_STOP_SERVICE) {
-				Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
-				stopSelf();
-				Log.d(LCAT, "stopSelf");
-				((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-						.cancelAll();
+			if (intent.hasExtra(SERVICE_COMMAND_KEY)) {
+				int rqs = intent.getIntExtra(SERVICE_COMMAND_KEY, 0);
+				if (rqs == RQS_STOP_SERVICE) {
+					Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
+					stopSelf();
+					Log.d(LCAT, "stopSelf");
+					((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+							.cancelAll();
+				}
+				if (rqs == RQS_REMOVE_NOTIFICATION) {
+					Log.d(LCAT, "RQS_REMOVE_NOTIFICATION received");
+					notificationManager.cancel(NOTIFICATION_ID);
+					Log.d(LCAT, "notificationManager.cancelAll()");
+				}
 			}
-			if (rqs == RQS_REMOVE_NOTIFICATION) {
-				Log.d(LCAT, "RQS_REMOVE_NOTIFICATION received");
-				notificationManager.cancel(NOTIFICATION_ID);
-				Log.d(LCAT, "notificationManager.cancelAll()");
-
+			if (intent.hasExtra(NOTIFICATION_SETPROGRESS)) {
+				float progressValue = intent.getFloatExtra(
+						NOTIFICATION_SETPROGRESS, 0.0f);
+				if (builder != null && hasProgress == true) {
+					builder.setProgress(1000, Math.round(progressValue * 1000),
+							false);
+				} else {
+					Log.w(LCAT, "hasProgress was false, cannot setProgress");
+				}
 			}
 		}
 	}

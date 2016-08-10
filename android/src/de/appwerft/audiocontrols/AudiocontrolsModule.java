@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Vibrator;
 
@@ -28,6 +29,10 @@ public class AudiocontrolsModule extends KrollModule {
 	@Kroll.constant
 	final public static int STATE_STOP = 0;
 	@Kroll.constant
+	final public static int NOTIFICATION_TYPE_COMPACT = 1;
+	@Kroll.constant
+	final public static int NOTIFICATION_TYPE_BIG = 0;
+	@Kroll.constant
 	final public static int STATE_PLAYING = 2;
 
 	Context ctx;
@@ -37,9 +42,12 @@ public class AudiocontrolsModule extends KrollModule {
 	final String LCAT = "RemAudio ♛♛♛";
 	final int NOTIFICATION_ID = 1;
 	private static int lollipop = 1;
-	private static int state = 0;
+	private static boolean hasProgress = false;
+	private static boolean hasActions = true;
 
+	private int iconBackgroundColor = Color.DKGRAY;
 	private Intent lockscreenService;
+	private static int state = 0;
 	static KrollFunction onKeypressedCallback = null;
 
 	private RemoteAudioControlEventLister remoteAudioControlEventLister;
@@ -87,6 +95,9 @@ public class AudiocontrolsModule extends KrollModule {
 	/* read all paramters from JS-side and save into vars in this class */
 	private void getOptions(KrollDict opts) {
 		if (opts != null && opts instanceof KrollDict) {
+			if (opts.containsKeyAndNotNull("hasActions")) {
+				hasActions = opts.getBoolean("hasActions");
+			}
 			if (opts.containsKeyAndNotNull("title")) {
 				title = opts.getString("title");
 			}
@@ -99,6 +110,17 @@ public class AudiocontrolsModule extends KrollModule {
 			if (opts.containsKeyAndNotNull("lollipop")) {
 				lollipop = opts.getInt("lollipop");
 			}
+			if (opts.containsKeyAndNotNull("hasProgress")) {
+				hasProgress = opts.getBoolean("hasProgress");
+			}
+			try {
+				if (opts.containsKeyAndNotNull("iconBackgroundColor")) {
+					iconBackgroundColor = Color.parseColor(opts
+							.getString("iconBackgroundColor"));
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			if (opts.containsKeyAndNotNull("state")) {
 				state = opts.getInt("state");
 			}
@@ -110,6 +132,18 @@ public class AudiocontrolsModule extends KrollModule {
 				}
 			}
 		}
+	}
+
+	@Kroll.method
+	public void setProgress(float progressValue) {
+		if (progressValue < 0 || progressValue > 1)
+			return;
+		Intent intent = new Intent(ctx.getPackageName());
+		intent.setAction(NotificationBigService.ACTION);
+		intent.putExtra(NotificationBigService.NOTIFICATION_SETPROGRESS,
+				progressValue);
+		ctx.sendBroadcast(intent);
+		Log.d(LCAT, "RQS_STOP_SERVICE sent");
 	}
 
 	@Kroll.method
@@ -163,6 +197,10 @@ public class AudiocontrolsModule extends KrollModule {
 					intent.putExtra("artist", artist);
 				if (image != null)
 					intent.putExtra("image", image);
+				intent.putExtra("hasActions", hasActions);
+				intent.putExtra("hasProgress", hasProgress);
+				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
+				// needed for null case:
 				intent.putExtra("state", Integer.toString(state));
 				ctx.startService(intent);
 				/* and start of receiver for buttons */
