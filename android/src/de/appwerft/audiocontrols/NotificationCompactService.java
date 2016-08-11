@@ -9,8 +9,10 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -22,28 +24,29 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 public class NotificationCompactService extends Service {
-	final static String ACTION = "NotifyServiceAction";
-	final static String STOP_SERVICE_BROADCAST_KEY = "StopServiceBroadcastKey";
-	final static int RQS_STOP_SERVICE = 1;
-	NotificationCompactServiceReceiver notificationServiceReceiver;
+	/*
+	 * final static String ACTION = "NotifyServiceAction"; final static String
+	 * SERVICE_COMMAND_KEY = "SERVICE_COMMAND_KEY"; final static String
+	 * NOTIFICATION_SETPROGRESS = "NOTIFICATION_SETPROGRESS"; final static int
+	 * RQS_STOP_SERVICE = 1; final static int RQS_REMOVE_NOTIFICATION = 2;
+	 */
+	NotificationServiceReceiver notificationServiceReceiver;
 	ResultReceiver resultReceiver;
 	Resources res;
 	String packageName;
 	Context ctx;
 	Boolean isPendingintentStarted = false;
 	private NotificationManager notificationManager;
+	private NotificationCompat.BigTextStyle bigTextNotification;
 	private RemoteViews remoteViews;
 	private NotificationCompat.Builder builder;
 	final boolean PLAYING = true;
 	final boolean PAUSING = false;
-	boolean playintentdone = false;
-	boolean previntentdone = false;
-	boolean nextintentdone = false;
-
 	boolean state = PLAYING;
 	final int NOTIFICATION_ID = 1337;
 	final int REQUEST_CODE = 1337;
-	final String LCAT = "NotificationBigService 👽👽";
+	private boolean hasProgress;
+	final String LCAT = "NotificationCompactService";
 	int artistId, coverimageId, titleId, prevcontrolId, nextcontrolId,
 			playcontrolId;
 	int playiconId, pauseiconId;
@@ -54,12 +57,12 @@ public class NotificationCompactService extends Service {
 		ctx = TiApplication.getInstance().getApplicationContext();
 		res = ctx.getResources();
 		packageName = ctx.getPackageName();
-		artistId = R("artist", "id");
-		titleId = R("title", "id");
-		prevcontrolId = R("prevCtrl", "id");
-		nextcontrolId = R("nextCtrl", "id");
-		playcontrolId = R("playCtrl", "id");
-		coverimageId = R("coverimage", "id");
+		/*
+		 * artistId = R("artist", "id"); titleId = R("title", "id");
+		 * prevcontrolId = R("prevCtrl", "id"); nextcontrolId = R("nextCtrl",
+		 * "id"); playcontrolId = R("playCtrl", "id"); coverimageId =
+		 * R("coverimage", "id");
+		 */
 		playiconId = R("ic_play", "drawable");
 		pauseiconId = R("ic_pause", "drawable");
 		remoteViews = new RemoteViews(ctx.getPackageName(), R(
@@ -71,7 +74,11 @@ public class NotificationCompactService extends Service {
 	public void onCreate() {
 		Log.d(LCAT,
 				"LockscreenService created => new notificationServiceReceiver");
-		notificationServiceReceiver = new NotificationCompactServiceReceiver();
+		notificationServiceReceiver = new NotificationServiceReceiver();
+		// for back communication:*/
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(AudiocontrolsModule.ACTION);
+		ctx.registerReceiver(notificationServiceReceiver, filter);
 		super.onCreate();
 	}
 
@@ -81,12 +88,49 @@ public class NotificationCompactService extends Service {
 	}
 
 	@Override
+	public boolean onUnbind(Intent intent) {
+		stopSelf();
+		return super.onUnbind(intent);
+	}
+
+	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		setUpNotification();
+		Log.d(LCAT, "onStartCommand " + intent.toString());
+		if (builder == null)
+			createNotification(intent.getExtras());
 		if (intent != null && intent.hasExtra("title")) {
 			updateNotification(intent.getExtras());
 		}
-		return START_STICKY;
+		return START_NOT_STICKY;
+	}
+
+	private void createNotification(Bundle bundle) {
+		hasProgress = bundle.getBoolean("hasProgress");
+		final boolean hasActions = bundle.getBoolean("hasActions");
+		final int iconBackgroundColor = bundle.getInt("iconBackgroundColor");
+		final String title = bundle.getString("title");
+		final String artist = bundle.getString("artist");
+		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
+		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		builder = new NotificationCompat.Builder(ctx);
+		builder.setSmallIcon(R("notification_icon", "drawable"))
+				.setAutoCancel(false).setOngoing(true)
+				.setColor(iconBackgroundColor)
+				.setPriority(NotificationCompat.PRIORITY_HIGH)
+				.setContentTitle("").setContentText("");
+		if (hasProgress) {
+			builder.setProgress(100, 0, false);
+		}
+		if (hasActions) {
+			bigTextNotification = new NotificationCompat.BigTextStyle();
+			bigTextNotification.setBigContentTitle("Title");
+			bigTextNotification.bigText("Title");
+			builder.setStyle(bigTextNotification);
+			setAudioControlActions("ic_play");
+		}
+		if (title != null)
+			notificationManager.notify(NOTIFICATION_ID, builder.build());
+
 	}
 
 	private PendingIntent createPendingIntent(String msg) {
@@ -100,42 +144,45 @@ public class NotificationCompactService extends Service {
 		return pendIntent;
 	}
 
-	private void setUpNotification() {
-		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
-		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		builder = new NotificationCompat.Builder(ctx);
-		builder.setSmallIcon(R("notification_icon", "drawable"))
-				.setAutoCancel(false).setOngoing(true).setContentTitle("")
-				// .setContentIntent(pendIntent)
-				.setContent(remoteViews);
-		notificationManager.notify(NOTIFICATION_ID, builder.build());
-		// startForeground(NOTIFICATION_ID, builder.build());
-
-		if (!playintentdone) {
-			setCompactButtonListener(playcontrolId, "play");
-			playintentdone = true;
-		}
-		if (!previntentdone) {
-			setCompactButtonListener(prevcontrolId, "prev");
-			previntentdone = true;
-		}
-		if (!nextintentdone) {
-			setCompactButtonListener(nextcontrolId, "next");
-			nextintentdone = true;
-		}
+	private void setAudioControlActions(String id) {
+		builder.mActions.clear();
+		builder.addAction(R("ic_prev", "drawable"), "",
+				createPendingIntent("prev"));
+		builder.addAction(R(id, "drawable"), "", createPendingIntent("play"));
+		builder.addAction(R("ic_next", "drawable"), "",
+				createPendingIntent("next"));
 	}
 
 	private void updateNotification(final Bundle bundle) {
-		remoteViews.setTextViewText(artistId, bundle.getString("artist"));
-		remoteViews.setTextViewText(titleId, bundle.getString("title"));
-		notificationManager.notify(NOTIFICATION_ID, builder.build());
+		final String title = bundle.getString("title");
+		final String artist = bundle.getString("artist");
 		final String image = bundle.getString("image");
+
+		if (title != null) {
+			bigTextNotification.setBigContentTitle(title);
+			bigTextNotification.bigText(artist);
+		}
+		if (artist != null) {
+			builder.setContentTitle(title);
+			builder.setContentText(artist);
+		}
+
+		if (bundle.getString("state") != null) {
+			final int state = Integer.parseInt(bundle.getString("state"));
+			if (state == AudiocontrolsModule.STATE_PLAYING) {
+				setAudioControlActions("ic_stop");
+			}
+			if (state == AudiocontrolsModule.STATE_STOP) {
+				setAudioControlActions("ic_play");
+			}
+		}
+		notificationManager.notify(NOTIFICATION_ID, builder.build());
 		if (image != null) {
 			final Target target = new Target() {
 				@Override
 				public void onBitmapLoaded(Bitmap bitmap,
 						Picasso.LoadedFrom from) {
-					remoteViews.setImageViewBitmap(coverimageId, bitmap);
+					builder.setLargeIcon(bitmap);
 					notificationManager
 							.notify(NOTIFICATION_ID, builder.build());
 				}
@@ -155,14 +202,34 @@ public class NotificationCompactService extends Service {
 		}
 	}
 
-	public class NotificationCompactServiceReceiver extends BroadcastReceiver {
+	public class NotificationServiceReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			int rqs = intent.getIntExtra(STOP_SERVICE_BROADCAST_KEY, 0);
-			if (rqs == RQS_STOP_SERVICE) {
-				stopSelf();
-				((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-						.cancelAll();
+			if (intent.hasExtra(AudiocontrolsModule.SERVICE_COMMAND_KEY)) {
+				int rqs = intent.getIntExtra(
+						AudiocontrolsModule.SERVICE_COMMAND_KEY, 0);
+				if (rqs == AudiocontrolsModule.RQS_STOP_SERVICE) {
+					Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
+					stopSelf();
+					Log.d(LCAT, "stopSelf");
+					((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+							.cancelAll();
+				}
+				if (rqs == AudiocontrolsModule.RQS_REMOVE_NOTIFICATION) {
+					Log.d(LCAT, "RQS_REMOVE_NOTIFICATION received");
+					notificationManager.cancel(NOTIFICATION_ID);
+					Log.d(LCAT, "notificationManager.cancelAll()");
+				}
+			}
+			if (intent.hasExtra(AudiocontrolsModule.NOTIFICATION_SETPROGRESS)) {
+				float progressValue = intent.getFloatExtra(
+						AudiocontrolsModule.NOTIFICATION_SETPROGRESS, 0.0f);
+				if (builder != null && hasProgress == true) {
+					builder.setProgress(1000, Math.round(progressValue * 1000),
+							false);
+				} else {
+					Log.w(LCAT, "hasProgress was false, cannot setProgress");
+				}
 			}
 		}
 	}
@@ -178,18 +245,4 @@ public class NotificationCompactService extends Service {
 		}
 		return id;
 	}
-
-	private void setCompactButtonListener(int id, String msg) {
-		/* same intent as in AudioControlWidget */
-		Intent intent = new Intent();
-		intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-		intent.setAction(ctx.getPackageName());
-		intent.putExtra(AudiocontrolsModule.AUDIOCONTROL_COMMAND, msg);
-		PendingIntent pendIntent = PendingIntent.getBroadcast(ctx, id, intent,
-				PendingIntent.FLAG_UPDATE_CURRENT);
-		remoteViews.setOnClickPendingIntent(id, pendIntent);
-		// ctx.sendBroadcast(intent);
-
-	}
-
 }

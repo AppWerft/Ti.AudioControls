@@ -6,8 +6,11 @@ import java.net.URL;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.view.GestureDetectorCompat;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -18,6 +21,7 @@ import com.squareup.picasso.Picasso;
 
 /* it is class for LockscreenView, triggered from LockScreenService*/
 public class AudioControlWidget extends RelativeLayout {
+	private GestureDetectorCompat gestureDetector;
 	ImageView coverView;
 	View container;
 	TextView titleView;
@@ -65,11 +69,15 @@ public class AudioControlWidget extends RelativeLayout {
 		this.stopIcon = R("android:drawable/ic_media_pause", "drawable");
 		this.xScale = this.playCtrl.getScaleX();
 		this.yScale = this.playCtrl.getScaleY();
+		/* activating of control buttons: */
 		this.playCtrl.setOnClickListener(buttonListener);
 		this.prevCtrl.setOnClickListener(buttonListener);
 		this.nextCtrl.setOnClickListener(buttonListener);
 		this.placeholderId = R("placeholder", "drawable");
 		this.addView(container);
+		gestureDetector = new GestureDetectorCompat(ctx,
+				new LockScreenWidgetGestureListener());
+
 	}
 
 	private OnClickListener buttonListener = new OnClickListener() {
@@ -131,4 +139,29 @@ public class AudioControlWidget extends RelativeLayout {
 			this.playCtrl.setScaleY(yScale);
 		}
 	}
+
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		this.gestureDetector.onTouchEvent(event);
+		return super.onTouchEvent(event);
+	}
+
+	class LockScreenWidgetGestureListener extends
+			GestureDetector.SimpleOnGestureListener {
+		private static final String DEBUG_TAG = "🔫";
+
+		@Override
+		public boolean onDown(MotionEvent event) {
+			return true;
+		}
+
+		@Override
+		public boolean onFling(MotionEvent event1, MotionEvent event2,
+				float velocityX, float velocityY) {
+
+			Log.d(DEBUG_TAG, "onFling: " + event1.toString());
+			return true;
+		}
+	}
+
 }

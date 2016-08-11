@@ -4,8 +4,6 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.titanium.TiProperties;
 
-import de.appwerft.audiocontrols.NotificationBigService.NotificationBigServiceReceiver;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -46,6 +44,10 @@ public class LockScreenService extends Service {
 		Log.d(LCAT, "LockscreenService constructed");
 	}
 
+	public void updateGravity() {
+
+	}
+
 	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate() {
@@ -57,6 +59,7 @@ public class LockScreenService extends Service {
 		ctx.registerReceiver(lockscreenServiceReceiver, filter);
 
 		audioControlWidget = new AudioControlWidget(ctx);
+
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
 				| WindowManager.LayoutParams.FLAG_FULLSCREEN

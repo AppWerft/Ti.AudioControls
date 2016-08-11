@@ -18,10 +18,19 @@ import android.os.Vibrator;
 
 @Kroll.module(name = "Audiocontrols", id = "de.appwerft.audiocontrols")
 public class AudiocontrolsModule extends KrollModule {
+	// constants for broadcast commnunication:
+	final static String ACTION = "NotifyServiceAction";
+	final static String SERVICE_COMMAND_KEY = "SERVICECOMMANDKEY";
+	final static String NOTIFICATION_SETPROGRESS = "NOTIFICATION_SETPROGRESS";
+	final static int RQS_STOP_SERVICE = 1;
+	final static int RQS_REMOVE_NOTIFICATION = 2;
+	// exported constants:
 	@Kroll.constant
 	final int WIDGET_LOCKSCREEN = 1;
 	@Kroll.constant
 	final int WIDGET_NOTIFICATION = 2;
+	@Kroll.constant
+	final int WIDGET_BOTH = 3;
 	@Kroll.constant
 	final int WIDGET_POSITION_TOP = 0;
 	@Kroll.constant
@@ -39,16 +48,18 @@ public class AudiocontrolsModule extends KrollModule {
 	public static String AUDIOCONTROL_COMMAND = "AUDIOCONTROL_COMMAND";
 	public static String rootActivityClassName = "";
 	AudioControlWidget audioControlWidget;
-	final String LCAT = "RemAudio ♛♛♛";
+	final String LCAT = "RemAudio 📻📣🔊";
 	final int NOTIFICATION_ID = 1;
 	private static int lollipop = 1;
 	private static boolean hasProgress = false;
 	private static boolean hasActions = true;
+	private static int vibrate = 0;
 
 	private int iconBackgroundColor = Color.DKGRAY;
+	private int lockscreenWidgetVerticalPosition = WIDGET_POSITION_BOTTOM;
 	private Intent lockscreenService;
 	private static int state = 0;
-	static KrollFunction onKeypressedCallback = null;
+	static KrollFunction onClickCallback = null;
 
 	private RemoteAudioControlEventLister remoteAudioControlEventLister;
 
@@ -86,7 +97,7 @@ public class AudiocontrolsModule extends KrollModule {
 	@Override
 	public void onDestroy(Activity activity) {
 		Log.d(LCAT, "onDestroy");
-		removeRemoteAudioControl();
+		hideRemoteAudioControl();
 		stopNotificationService();
 		// TiApplication.getInstance().stopService(lockscreenService);
 		super.onDestroy(activity);
@@ -107,8 +118,15 @@ public class AudiocontrolsModule extends KrollModule {
 			if (opts.containsKeyAndNotNull("image")) {
 				image = opts.getString("image");
 			}
+			if (opts.containsKeyAndNotNull("lockscreenWidgetVerticalPosition")) {
+				lockscreenWidgetVerticalPosition = opts
+						.getInt("lockscreenWidgetVerticalPosition");
+			}
 			if (opts.containsKeyAndNotNull("lollipop")) {
 				lollipop = opts.getInt("lollipop");
+			}
+			if (opts.containsKeyAndNotNull("vibrate")) {
+				vibrate = opts.getInt("vibrate");
 			}
 			if (opts.containsKeyAndNotNull("hasProgress")) {
 				hasProgress = opts.getBoolean("hasProgress");
@@ -125,13 +143,14 @@ public class AudiocontrolsModule extends KrollModule {
 				state = opts.getInt("state");
 			}
 			/* callback for buttons */
-			if (opts.containsKeyAndNotNull("onKeypressed")) {
-				Object cb = opts.get("onKeypressed");
+			if (opts.containsKeyAndNotNull("onClick")) {
+				Object cb = opts.get("onClick");
 				if (cb instanceof KrollFunction) {
-					onKeypressedCallback = (KrollFunction) cb;
+					onClickCallback = (KrollFunction) cb;
 				}
 			}
 		}
+		Log.d(LCAT, "options imported");
 	}
 
 	@Kroll.method
@@ -139,9 +158,8 @@ public class AudiocontrolsModule extends KrollModule {
 		if (progressValue < 0 || progressValue > 1)
 			return;
 		Intent intent = new Intent(ctx.getPackageName());
-		intent.setAction(NotificationBigService.ACTION);
-		intent.putExtra(NotificationBigService.NOTIFICATION_SETPROGRESS,
-				progressValue);
+		intent.setAction(ACTION);
+		intent.putExtra(NOTIFICATION_SETPROGRESS, progressValue);
 		ctx.sendBroadcast(intent);
 		Log.d(LCAT, "RQS_STOP_SERVICE sent");
 	}
@@ -152,12 +170,11 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public void removeRemoteAudioControl() {
+	public void hideRemoteAudioControl() {
 		Log.d(LCAT, "removeRemoteAudioControl");
 		Intent intent = new Intent(ctx.getPackageName());
-		intent.setAction(NotificationBigService.ACTION);
-		intent.putExtra(NotificationBigService.SERVICE_COMMAND_KEY,
-				NotificationBigService.RQS_REMOVE_NOTIFICATION);
+		intent.setAction(ACTION);
+		intent.putExtra(SERVICE_COMMAND_KEY, RQS_REMOVE_NOTIFICATION);
 
 		Log.d(LCAT, "RQS_STOP_SERVICE will send");
 		ctx.sendBroadcast(intent);
@@ -167,27 +184,25 @@ public class AudiocontrolsModule extends KrollModule {
 
 	private void stopNotificationService() {
 		Intent intent = new Intent(ctx.getPackageName());
-		intent.setAction(NotificationBigService.ACTION);
-		intent.putExtra(NotificationBigService.SERVICE_COMMAND_KEY,
-				NotificationBigService.RQS_STOP_SERVICE);
+		intent.setAction(ACTION);
+		intent.putExtra(SERVICE_COMMAND_KEY, RQS_STOP_SERVICE);
 		ctx.sendBroadcast(intent);
 		Log.d(LCAT, "RQS_STOP_SERVICE sent");
 	}
 
-	private boolean supportsBothWidgets() {
+	private boolean APIsupportsBothWidgets() {
 		return (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP || Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1) ? true
 				: false;
 	}
 
 	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
-		/* all options will read from Javascript and save as class vars */
 		getOptions(opts);
 		/* registering of broadcastreceiver for results */
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-				|| supportsBothWidgets() == true
+				|| APIsupportsBothWidgets() == true
 				&& lollipop == WIDGET_LOCKSCREEN) {
-			Log.d(LCAT, "LockscreenView started");
+			Log.d(LCAT, "old device or forced lockscreen:");
 			try {
 				/* starting of service for it */
 				Intent intent = new Intent(ctx, LockScreenService.class);
@@ -208,25 +223,32 @@ public class AudiocontrolsModule extends KrollModule {
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
-		}
-		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
-				|| supportsBothWidgets() == true
+		} else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
+				|| APIsupportsBothWidgets() == true
 				&& lollipop == WIDGET_NOTIFICATION) {
 			try {
+				Log.d(LCAT, "new device or forced notification:");
 				/* starting of service for it */
-				Intent intent = new Intent(ctx, NotificationBigService.class);
+				Intent intent = new Intent(ctx,
+						NotificationCompactService.class);
 				if (title != null)
 					intent.putExtra("title", title);
 				if (artist != null)
 					intent.putExtra("artist", artist);
 				if (image != null)
 					intent.putExtra("image", image);
+				intent.putExtra("hasActions", hasActions);
+				intent.putExtra("hasProgress", hasProgress);
+				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
+				// needed for null case:
 				intent.putExtra("state", Integer.toString(state));
 				ctx.startService(intent);
 				/* and start of receiver for buttons (first time) */
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
+		} else {
+			Log.e(LCAT, "no matching of type:");
 		}
 		/* in all API levels: */
 		if (remoteAudioControlEventLister == null) {
@@ -244,8 +266,6 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void setContent(KrollDict opts) {
-		// http://stackoverflow.com/questions/15346647/android-passing-variables-to-an-already-running-service
-		// Alias to create…
 		this.createRemoteAudioControl(opts);
 	}
 
@@ -262,21 +282,31 @@ public class AudiocontrolsModule extends KrollModule {
 
 	// http://stackoverflow.com/questions/9056814/how-do-i-intercept-button-presses-on-the-headset-in-android
 
-	/* with this receiver we read the events from controlUI */
+	/*
+	 * with this receiver we read the events from controlUI and send back to JS,
+	 * quasi a proxy
+	 */
 	public class RemoteAudioControlEventLister extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			final String audiocontrolercmd;
+			Log.d(LCAT, "event from remote control received:  "
+					+ AUDIOCONTROL_COMMAND);
+
+			// final String audiocontrolercmd;
 			if (intent.getStringExtra(AUDIOCONTROL_COMMAND) != null) {
-				Vibrator v = (Vibrator) ctx
-						.getSystemService(Context.VIBRATOR_SERVICE);
-				v.vibrate(20);
-				KrollDict dict = new KrollDict();
-				dict.put("cmd", intent.getStringExtra(AUDIOCONTROL_COMMAND));
-				if (onKeypressedCallback != null
-						&& onKeypressedCallback instanceof KrollFunction) {
-					onKeypressedCallback.call(getKrollObject(), dict);
+				if (vibrate > 0) {
+					Vibrator dildo = (Vibrator) ctx
+							.getSystemService(Context.VIBRATOR_SERVICE);
+					dildo.vibrate(vibrate);
 				}
+				KrollDict event = new KrollDict();
+				event.put("cmd", intent.getStringExtra(AUDIOCONTROL_COMMAND));
+				Log.d(LCAT, event.toString());
+				if (onClickCallback != null) {
+					Log.d(LCAT, "send " + event.toString() + " back to JS");
+					onClickCallback.call(getKrollObject(), event);
+				} else
+					Log.e(LCAT, "no callback available");
 			}
 		}
 	}
