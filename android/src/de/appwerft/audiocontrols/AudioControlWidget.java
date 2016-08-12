@@ -21,34 +21,28 @@ import com.squareup.picasso.Picasso;
 
 /* it is class for LockscreenView, triggered from LockScreenService*/
 public class AudioControlWidget extends RelativeLayout {
+	public static final int DIRECTION_UP = 1, DIRECTION_DOWN = -1;
+
 	private GestureDetectorCompat gestureDetector;
-	ImageView coverView;
-	View container;
-	TextView titleView;
-	TextView artistView;
-	ImageButton playCtrl;
-	ImageButton prevCtrl;
-	ImageButton nextCtrl;
+	private ImageView coverView;
+	private View container;
+	private TextView titleView, artistView;
+	private ImageButton playCtrl, prevCtrl, nextCtrl;
 	Boolean isPlaying;
-	int playIcon, stopIcon;
+	int playIcon, stopIcon, playCtrlId, nextCtrlId, prevCtrlId, placeholderId;
 	float xScale, yScale;
-	int playCtrlId, nextCtrlId, prevCtrlId, placeholderId;
 	Context ctx;// = TiApplication.getInstance().getApplicationContext();
 	final String LCAT = "LockAudioScreen ♛♛♛";
+	public onFlingListener flingListener;
 
-	private int R(String name, String type) {
-		int id = 0;
-		try {
-			id = ctx.getResources().getIdentifier(name, type,
-					ctx.getPackageName());
-		} catch (Exception e) {
-			return id;
-		}
-		return id;
+	public interface onFlingListener {
+		public void onFlinged(int direction);
 	}
 
-	public AudioControlWidget(Context ctx) {
+	public AudioControlWidget(Context ctx, onFlingListener flingListener) {
+
 		super(ctx);
+		this.flingListener = flingListener;
 		isPlaying = true;
 		this.ctx = ctx;
 		LayoutInflater inflater = (LayoutInflater) ctx
@@ -127,7 +121,6 @@ public class AudioControlWidget extends RelativeLayout {
 			this.artistView.setText(artist);
 		if (b.getString("state") != null) {
 			final int state = Integer.parseInt(b.getString("state"));
-			Log.d(LCAT, "parsed " + state);
 			if (state == AudiocontrolsModule.STATE_PLAYING) {
 				this.playCtrl.setImageResource(stopIcon);
 			} else if (state == AudiocontrolsModule.STATE_STOP) {
@@ -158,10 +151,22 @@ public class AudioControlWidget extends RelativeLayout {
 		@Override
 		public boolean onFling(MotionEvent event1, MotionEvent event2,
 				float velocityX, float velocityY) {
-
-			Log.d(DEBUG_TAG, "onFling: " + event1.toString());
+			int direction = (velocityY < 0) ? DIRECTION_UP : DIRECTION_DOWN;
+			if (flingListener != null)
+				flingListener.onFlinged(direction);
 			return true;
 		}
+	}
+
+	private int R(String name, String type) {
+		int id = 0;
+		try {
+			id = ctx.getResources().getIdentifier(name, type,
+					ctx.getPackageName());
+		} catch (Exception e) {
+			return id;
+		}
+		return id;
 	}
 
 }

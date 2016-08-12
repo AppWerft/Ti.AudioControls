@@ -8,7 +8,7 @@ android:paddingLeft="0dp"
 android:paddingRight="0dp"
 android:paddingTop="0dp"
 android:paddingBottom="0dp"
-android:background="#222">
+android:background="#8000">
 	<ImageView
 	android:layout_width="95dp"
 	android:layout_height="95dp"

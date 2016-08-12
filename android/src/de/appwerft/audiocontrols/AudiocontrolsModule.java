@@ -171,15 +171,12 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void hideRemoteAudioControl() {
-		Log.d(LCAT, "removeRemoteAudioControl");
+		Log.d(LCAT, "intent for hiding control will send. ");
 		Intent intent = new Intent(ctx.getPackageName());
 		intent.setAction(ACTION);
 		intent.putExtra(SERVICE_COMMAND_KEY, RQS_REMOVE_NOTIFICATION);
-
-		Log.d(LCAT, "RQS_STOP_SERVICE will send");
 		ctx.sendBroadcast(intent);
-		Log.d(LCAT, "RQS_STOP_SERVICE sent");
-
+		Log.d(LCAT, "intent for hiding control sent. " + intent.toString());
 	}
 
 	private void stopNotificationService() {
