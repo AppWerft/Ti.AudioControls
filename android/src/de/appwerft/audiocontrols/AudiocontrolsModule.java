@@ -196,10 +196,7 @@ public class AudiocontrolsModule extends KrollModule {
 	public void createRemoteAudioControl(KrollDict opts) {
 		getOptions(opts);
 		/* registering of broadcastreceiver for results */
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-				|| APIsupportsBothWidgets() == true
-				&& lollipop == WIDGET_LOCKSCREEN) {
-			Log.d(LCAT, "old device or forced lockscreen:");
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
 				/* starting of service for it */
 				Intent intent = new Intent(ctx, LockScreenService.class);
@@ -220,32 +217,27 @@ public class AudiocontrolsModule extends KrollModule {
 			} catch (Exception ex) {
 				Log.e(LCAT, "Exception caught:" + ex);
 			}
-		} else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
-				|| APIsupportsBothWidgets() == true
-				&& lollipop == WIDGET_NOTIFICATION) {
-			try {
-				Log.d(LCAT, "new device or forced notification:");
-				/* starting of service for it */
-				Intent intent = new Intent(ctx,
-						NotificationCompactService.class);
-				if (title != null)
-					intent.putExtra("title", title);
-				if (artist != null)
-					intent.putExtra("artist", artist);
-				if (image != null)
-					intent.putExtra("image", image);
-				intent.putExtra("hasActions", hasActions);
-				intent.putExtra("hasProgress", hasProgress);
-				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
-				// needed for null case:
-				intent.putExtra("state", Integer.toString(state));
-				ctx.startService(intent);
-				/* and start of receiver for buttons (first time) */
-			} catch (Exception ex) {
-				Log.e(LCAT, "Exception caught:" + ex);
-			}
-		} else {
-			Log.e(LCAT, "no matching of type:");
+		}
+
+		try {
+			Log.d(LCAT, "new device or forced notification:");
+			/* starting of service for it */
+			Intent intent = new Intent(ctx, NotificationCompactService.class);
+			if (title != null)
+				intent.putExtra("title", title);
+			if (artist != null)
+				intent.putExtra("artist", artist);
+			if (image != null)
+				intent.putExtra("image", image);
+			intent.putExtra("hasActions", hasActions);
+			intent.putExtra("hasProgress", hasProgress);
+			intent.putExtra("iconBackgroundColor", iconBackgroundColor);
+			// needed for null case:
+			intent.putExtra("state", Integer.toString(state));
+			ctx.startService(intent);
+			/* and start of receiver for buttons (first time) */
+		} catch (Exception ex) {
+			Log.e(LCAT, "Exception caught:" + ex);
 		}
 		/* in all API levels: */
 		if (remoteAudioControlEventLister == null) {

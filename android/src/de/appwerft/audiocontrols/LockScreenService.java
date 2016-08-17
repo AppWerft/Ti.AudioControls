@@ -17,7 +17,6 @@ import android.view.Gravity;
 import android.view.WindowManager;
 
 public class LockScreenService extends Service {
-
 	LockscreenServiceReceiver lockscreenServiceReceiver;
 	boolean widgetVisible = false;
 	final String LCAT = "LockAudioScreen 📌📌";
@@ -27,7 +26,10 @@ public class LockScreenService extends Service {
 	private BroadcastReceiver lockScreenStateReceiver;
 	private boolean isShowing = false, shouldVisible = true;
 	AudioControlWidget audioControlWidget;
+	AudioControlCover audioControlCover;
 	WindowManager windowManager;
+	WindowManager.LayoutParams layoutParamsWidget;
+	WindowManager.LayoutParams layoutParamsCover;
 	Context ctx;
 
 	public LockScreenService() {
@@ -47,24 +49,8 @@ public class LockScreenService extends Service {
 		ctx.registerReceiver(lockscreenServiceReceiver, filter);
 
 		windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-
-		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-				| WindowManager.LayoutParams.FLAG_FULLSCREEN
-				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-		final int type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
-		final int HEIGHT = 165;
-		/* Building of layoutParams: */
-		layoutParams = new WindowManager.LayoutParams(
-				WindowManager.LayoutParams.FILL_PARENT, HEIGHT, type, flags,
-				PixelFormat.TRANSLUCENT);
-		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-
-		String verticalAlign = appProperties.getString(
-				"PLAYER_VERTICAL_POSITION", "BOTTOM");
-		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
-				: Gravity.BOTTOM;
-		layoutParams.alpha = 1.00f;
+		layoutParamsWidget = this.getLayoutForWidget();
+		layoutParamsCover = this.getLayoutForCover();
 
 		audioControlWidget = new AudioControlWidget(ctx,
 				new AudioControlWidget.onFlingListener() {
@@ -90,6 +76,50 @@ public class LockScreenService extends Service {
 		ctx.registerReceiver(lockScreenStateReceiver, mfilter);
 	}
 
+	private WindowManager.LayoutParams getLayoutForWidget() {
+		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+				| WindowManager.LayoutParams.FLAG_FULLSCREEN
+				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+
+		final int HEIGHT = 165;
+		/* Building of layoutParams: */
+		layoutParams = new WindowManager.LayoutParams(
+				WindowManager.LayoutParams.FILL_PARENT, HEIGHT,
+				WindowManager.LayoutParams.TYPE_SYSTEM_ERROR, flags,
+				PixelFormat.TRANSLUCENT);
+		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+
+		String verticalAlign = appProperties.getString(
+				"PLAYER_VERTICAL_POSITION", "BOTTOM");
+		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
+				: Gravity.BOTTOM;
+		layoutParams.alpha = 1.00f;
+		return layoutParams;
+	}
+
+	private WindowManager.LayoutParams getLayoutForCover() {
+		final int flags = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+				| WindowManager.LayoutParams.FLAG_FULLSCREEN
+				| WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+				| WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+
+		final int HEIGHT = 165;
+		/* Building of layoutParams: */
+		layoutParams = new WindowManager.LayoutParams(
+				WindowManager.LayoutParams.FILL_PARENT, HEIGHT,
+				WindowManager.LayoutParams.TYPE_SYSTEM_ERROR, flags,
+				PixelFormat.TRANSLUCENT);
+		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+
+		String verticalAlign = appProperties.getString(
+				"PLAYER_VERTICAL_POSITION", "BOTTOM");
+		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
+				: Gravity.BOTTOM;
+		layoutParams.alpha = 1.00f;
+		return layoutParams;
+	}
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		if (intent != null) {
@@ -109,7 +139,8 @@ public class LockScreenService extends Service {
 			if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
 				if (!isShowing && shouldVisible) {
 					Log.d(LCAT, "LockScreenStateReceiver  !isShowing");
-					windowManager.addView(audioControlWidget, layoutParams);
+					windowManager.addView(audioControlWidget,
+							layoutParamsWidget);
 					isShowing = true;
 				}
 			} else if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {

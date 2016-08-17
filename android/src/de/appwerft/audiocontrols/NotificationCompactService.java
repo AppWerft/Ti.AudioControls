@@ -43,13 +43,14 @@ public class NotificationCompactService extends Service {
 	final boolean PLAYING = true;
 	final boolean PAUSING = false;
 	boolean state = PLAYING;
+
 	final int NOTIFICATION_ID = 1337;
 	final int REQUEST_CODE = 1337;
 	private boolean hasProgress;
 	final String LCAT = "NotificationCompactService";
 	int artistId, coverimageId, titleId, prevcontrolId, nextcontrolId,
 			playcontrolId;
-	int playiconId, pauseiconId;
+	int playiconId, pauseiconId, playIcon, stopIcon, prevIcon, nextIcon;
 
 	// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
 	public NotificationCompactService() {
@@ -146,10 +147,11 @@ public class NotificationCompactService extends Service {
 
 	private void setAudioControlActions(String id) {
 		builder.mActions.clear();
-		builder.addAction(R("ic_prev", "drawable"), "",
+		builder.addAction(R("android:ic_media_rew", "drawable", null), "",
 				createPendingIntent("prev"));
-		builder.addAction(R(id, "drawable"), "", createPendingIntent("play"));
-		builder.addAction(R("ic_next", "drawable"), "",
+		builder.addAction(R(id, "drawable", null), "",
+				createPendingIntent("play"));
+		builder.addAction(R("android:ic_media_ff", "drawable", null), "",
 				createPendingIntent("next"));
 	}
 
@@ -170,10 +172,10 @@ public class NotificationCompactService extends Service {
 		if (bundle.getString("state") != null) {
 			final int state = Integer.parseInt(bundle.getString("state"));
 			if (state == AudiocontrolsModule.STATE_PLAYING) {
-				setAudioControlActions("ic_stop");
+				setAudioControlActions("android:ic_media_pause");
 			}
 			if (state == AudiocontrolsModule.STATE_STOP) {
-				setAudioControlActions("ic_play");
+				setAudioControlActions("android:ic_media_play");
 			}
 		}
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
@@ -240,6 +242,16 @@ public class NotificationCompactService extends Service {
 		try {
 			id = ctx.getResources().getIdentifier(name, type,
 					ctx.getPackageName());
+		} catch (Exception e) {
+			return id;
+		}
+		return id;
+	}
+
+	private int R(String name, String type, String pn) {
+		int id = 0;
+		try {
+			id = ctx.getResources().getIdentifier(name, type, pn);
 		} catch (Exception e) {
 			return id;
 		}
