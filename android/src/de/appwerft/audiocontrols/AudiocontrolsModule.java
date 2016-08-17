@@ -1,5 +1,7 @@
 package de.appwerft.audiocontrols;
 
+import java.util.ArrayList;
+
 import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.kroll.KrollModule;
@@ -54,6 +56,7 @@ public class AudiocontrolsModule extends KrollModule {
 	private static boolean hasProgress = false;
 	private static boolean hasActions = true;
 	private static int vibrate = 0;
+	private ArrayList<KrollDict> notificationButtons;
 
 	private int iconBackgroundColor = Color.DKGRAY;
 	private int lockscreenWidgetVerticalPosition = WIDGET_POSITION_BOTTOM;
@@ -122,9 +125,7 @@ public class AudiocontrolsModule extends KrollModule {
 				lockscreenWidgetVerticalPosition = opts
 						.getInt("lockscreenWidgetVerticalPosition");
 			}
-			if (opts.containsKeyAndNotNull("lollipop")) {
-				lollipop = opts.getInt("lollipop");
-			}
+
 			if (opts.containsKeyAndNotNull("vibrate")) {
 				vibrate = opts.getInt("vibrate");
 			}
@@ -185,11 +186,6 @@ public class AudiocontrolsModule extends KrollModule {
 		intent.putExtra(SERVICE_COMMAND_KEY, RQS_STOP_SERVICE);
 		ctx.sendBroadcast(intent);
 		Log.d(LCAT, "RQS_STOP_SERVICE sent");
-	}
-
-	private boolean APIsupportsBothWidgets() {
-		return (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP || Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1) ? true
-				: false;
 	}
 
 	@Kroll.method

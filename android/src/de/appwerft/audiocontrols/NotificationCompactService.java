@@ -1,6 +1,7 @@
 package de.appwerft.audiocontrols;
 
 import org.appcelerator.kroll.common.Log;
+import de.appwerft.helpers.*;
 import org.appcelerator.titanium.TiApplication;
 
 import android.app.NotificationManager;
@@ -127,7 +128,7 @@ public class NotificationCompactService extends Service {
 			bigTextNotification.setBigContentTitle("Title");
 			bigTextNotification.bigText("Title");
 			builder.setStyle(bigTextNotification);
-			setAudioControlActions("ic_play");
+			setAudioControlActions("ic_media_play");
 		}
 		if (title != null)
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
@@ -147,12 +148,17 @@ public class NotificationCompactService extends Service {
 
 	private void setAudioControlActions(String id) {
 		builder.mActions.clear();
-		builder.addAction(R("android:ic_media_rew", "drawable", null), "",
-				createPendingIntent("prev"));
-		builder.addAction(R(id, "drawable", null), "",
-				createPendingIntent("play"));
-		builder.addAction(R("android:ic_media_ff", "drawable", null), "",
-				createPendingIntent("next"));
+		Log.d(LCAT, "id=" + id);
+		builder.addAction(RHelper.getAndroidDrawable("ic_media_rew"),
+				RHelper.getAppText("ic_media_rew"),
+				createPendingIntent("rewind"));
+
+		builder.addAction(RHelper.getAndroidDrawable(id),
+				RHelper.getAppText(id), createPendingIntent("play"));
+
+		builder.addAction(RHelper.getAndroidDrawable("ic_media_ff"),
+				RHelper.getAppText("ic_media_ff"),
+				createPendingIntent("forward"));
 	}
 
 	private void updateNotification(final Bundle bundle) {
@@ -172,10 +178,10 @@ public class NotificationCompactService extends Service {
 		if (bundle.getString("state") != null) {
 			final int state = Integer.parseInt(bundle.getString("state"));
 			if (state == AudiocontrolsModule.STATE_PLAYING) {
-				setAudioControlActions("android:ic_media_pause");
+				setAudioControlActions("ic_media_pause");
 			}
 			if (state == AudiocontrolsModule.STATE_STOP) {
-				setAudioControlActions("android:ic_media_play");
+				setAudioControlActions("ic_media_play");
 			}
 		}
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
@@ -256,5 +262,19 @@ public class NotificationCompactService extends Service {
 			return id;
 		}
 		return id;
+	}
+
+	private CharSequence RgetText(String name, String type) {
+		CharSequence bar = "";
+		Log.d(LCAT, "name type " + name + "  " + type);
+		try {
+			int id = ctx.getResources().getIdentifier(name, type, null);
+			bar = ctx.getResources().getText(id);
+		} catch (Exception e) {
+			Log.e(LCAT, "Resource not found: " + type + "@" + name);
+			return bar;
+		}
+		Log.d(LCAT, "bar=" + bar);
+		return bar;
 	}
 }
