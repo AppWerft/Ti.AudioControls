@@ -58,12 +58,12 @@ public class LockScreenService extends Service {
 					public void onFlinged(int direction) {
 						if (direction == AudioControlWidget.DIRECTION_DOWN) {
 							layoutParams.gravity = Gravity.BOTTOM;
-							appProperties.setString("PLAYER_VERTICAL_POSITION",
-									"BOTTOM");
+							appProperties.setInt("PLAYER_VERTICALPOSITION",
+									Gravity.BOTTOM);
 						} else {
 							layoutParams.gravity = Gravity.TOP;
-							appProperties.setString("PLAYER_VERTICAL_POSITION",
-									"TOP");
+							appProperties.setInt("PLAYER_VERTICALPOSITION",
+									Gravity.TOP);
 						}
 						windowManager.updateViewLayout(audioControlWidget,
 								layoutParams);
@@ -90,11 +90,8 @@ public class LockScreenService extends Service {
 				PixelFormat.TRANSLUCENT);
 		layoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 
-		String verticalAlign = appProperties.getString(
-				"PLAYER_VERTICAL_POSITION", "BOTTOM");
-		layoutParams.gravity = (verticalAlign == "TOP") ? Gravity.TOP
-				: Gravity.BOTTOM;
-		layoutParams.alpha = 1.00f;
+		layoutParams.gravity = appProperties.getInt("PLAYER_VERTICALPOSITION",
+				Gravity.BOTTOM);
 		return layoutParams;
 	}
 
