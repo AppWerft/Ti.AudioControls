@@ -1,7 +1,9 @@
 <resources>
     <string name="ic_media_rew">Rewind</string>
+    <string name="ic_media_previous">Previous</string>
       <string name="ic_media_play">Pause</string>
       <string name="ic_media_pause">Play</string>
       <string name="ic_media_ff">Forward</string>
+      <string name="ic_media_next">Next</string>
       <string name="action_settings"></string>
 </resources>

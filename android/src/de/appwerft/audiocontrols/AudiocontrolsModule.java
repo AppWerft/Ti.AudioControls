@@ -1,6 +1,7 @@
 package de.appwerft.audiocontrols;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollFunction;
@@ -45,28 +46,39 @@ public class AudiocontrolsModule extends KrollModule {
 	final public static int NOTIFICATION_TYPE_BIG = 0;
 	@Kroll.constant
 	final public static int STATE_PLAYING = 2;
-
+	// exposed icon strings (to avoid typos):
+	@Kroll.constant
+	final public static String ICON_PREVIOUS = "ic_media_previous";
+	@Kroll.constant
+	final public static String ICON_REWIND = "ic_media_rew";
+	@Kroll.constant
+	final public static String ICON_PLAY = "ic_media_play";
+	@Kroll.constant
+	final public static String ICON_PAUSE = "ic_media_pause";
+	@Kroll.constant
+	final public static String ICON_NEXT = "ic_media_next";
+	@Kroll.constant
+	final public static String ICON_FORWARD = "ic_media_ff";
+	// default buttons:
+	public String[] icons = { ICON_REWIND, ICON_PLAY, ICON_NEXT };
 	Context ctx;
 	public static String AUDIOCONTROL_COMMAND = "AUDIOCONTROL_COMMAND";
 	public static String rootActivityClassName = "";
 	AudioControlWidget audioControlWidget;
 	final String LCAT = "RemAudio 📻📣🔊";
 	final int NOTIFICATION_ID = 1;
-	private static int lollipop = 1;
 	private static boolean hasProgress = false;
 	private static boolean hasActions = true;
 	private static int vibrate = 0;
-	private ArrayList<KrollDict> notificationButtons;
 
 	private int iconBackgroundColor = Color.DKGRAY;
-	private int lockscreenWidgetVerticalPosition = WIDGET_POSITION_BOTTOM;
-	private Intent lockscreenService;
+
 	private static int state = 0;
 	static KrollFunction onClickCallback = null;
 
 	private RemoteAudioControlEventLister remoteAudioControlEventLister;
 
-	private static String title, artist, image;
+	private static String title, artist, coverimage;
 
 	public AudiocontrolsModule() {
 		super();
@@ -119,11 +131,10 @@ public class AudiocontrolsModule extends KrollModule {
 				artist = opts.getString("artist");
 			}
 			if (opts.containsKeyAndNotNull("image")) {
-				image = opts.getString("image");
+				coverimage = opts.getString("image");
 			}
-			if (opts.containsKeyAndNotNull("lockscreenWidgetVerticalPosition")) {
-				lockscreenWidgetVerticalPosition = opts
-						.getInt("lockscreenWidgetVerticalPosition");
+			if (opts.containsKeyAndNotNull("icons")) {
+				icons = opts.getStringArray("icons");
 			}
 
 			if (opts.containsKeyAndNotNull("vibrate")) {
@@ -194,15 +205,17 @@ public class AudiocontrolsModule extends KrollModule {
 		/* registering of broadcastreceiver for results */
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
-				/* starting of service for it */
+				/* starting of service for lock screen */
 				Intent intent = new Intent(ctx, LockScreenService.class);
 				if (title != null)
 					intent.putExtra("title", title);
 				if (artist != null)
 					intent.putExtra("artist", artist);
-				if (image != null)
-					intent.putExtra("image", image);
+				if (coverimage != null)
+					intent.putExtra("image", coverimage);
+
 				intent.putExtra("hasActions", hasActions);
+				intent.putExtra("icons", icons);
 				intent.putExtra("hasProgress", hasProgress);
 				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
 				// needed for null case:
@@ -223,8 +236,11 @@ public class AudiocontrolsModule extends KrollModule {
 				intent.putExtra("title", title);
 			if (artist != null)
 				intent.putExtra("artist", artist);
-			if (image != null)
-				intent.putExtra("image", image);
+			if (coverimage != null)
+				intent.putExtra("image", coverimage);
+			if (icons != null)
+				intent.putExtra("icons",
+						new ArrayList<String>(Arrays.asList(icons)));
 			intent.putExtra("hasActions", hasActions);
 			intent.putExtra("hasProgress", hasProgress);
 			intent.putExtra("iconBackgroundColor", iconBackgroundColor);
@@ -274,10 +290,7 @@ public class AudiocontrolsModule extends KrollModule {
 	public class RemoteAudioControlEventLister extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context ctx, Intent intent) {
-			Log.d(LCAT, "event from remote control received:  "
-					+ AUDIOCONTROL_COMMAND);
-
-			// final String audiocontrolercmd;
+			Log.d(LCAT, "from remote control received: " + AUDIOCONTROL_COMMAND);
 			if (intent.getStringExtra(AUDIOCONTROL_COMMAND) != null) {
 				if (vibrate > 0) {
 					Vibrator dildo = (Vibrator) ctx

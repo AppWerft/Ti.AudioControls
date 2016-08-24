@@ -1,7 +1,8 @@
 package de.appwerft.audiocontrols;
 
+import java.util.ArrayList;
+
 import org.appcelerator.kroll.common.Log;
-import de.appwerft.helpers.*;
 import org.appcelerator.titanium.TiApplication;
 
 import android.app.NotificationManager;
@@ -13,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -23,6 +23,8 @@ import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
+
+import de.appwerft.helpers.RHelper;
 
 public class NotificationCompactService extends Service {
 	/*
@@ -48,7 +50,7 @@ public class NotificationCompactService extends Service {
 	final int NOTIFICATION_ID = 1337;
 	final int REQUEST_CODE = 1337;
 	private boolean hasProgress;
-	final String LCAT = "NotificationCompactService";
+	final String LCAT = "NotifCompServ 🎼";
 	int artistId, coverimageId, titleId, prevcontrolId, nextcontrolId,
 			playcontrolId;
 	int playiconId, pauseiconId, playIcon, stopIcon, prevIcon, nextIcon;
@@ -112,6 +114,7 @@ public class NotificationCompactService extends Service {
 		final int iconBackgroundColor = bundle.getInt("iconBackgroundColor");
 		final String title = bundle.getString("title");
 		final String artist = bundle.getString("artist");
+		ArrayList<String> icons = bundle.getStringArrayList("icons");
 		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		builder = new NotificationCompat.Builder(ctx);
@@ -128,7 +131,7 @@ public class NotificationCompactService extends Service {
 			bigTextNotification.setBigContentTitle("Title");
 			bigTextNotification.bigText("Title");
 			builder.setStyle(bigTextNotification);
-			setAudioControlActions("ic_media_play");
+			// setAudioControlActions("ic_media_play");
 		}
 		if (title != null)
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
@@ -146,26 +149,21 @@ public class NotificationCompactService extends Service {
 		return pendIntent;
 	}
 
-	private void setAudioControlActions(String id) {
+	private void setAudioControlActions(ArrayList<String> icons) {
 		builder.mActions.clear();
-		Log.d(LCAT, "id=" + id);
-		builder.addAction(RHelper.getAndroidDrawable("ic_media_rew"),
-				RHelper.getAppText("ic_media_rew"),
-				createPendingIntent("rewind"));
-
-		builder.addAction(RHelper.getAndroidDrawable(id),
-				RHelper.getAppText(id), createPendingIntent("play"));
-
-		builder.addAction(RHelper.getAndroidDrawable("ic_media_ff"),
-				RHelper.getAppText("ic_media_ff"),
-				createPendingIntent("forward"));
+		for (String icon : icons)
+			builder.addAction(RHelper.getAndroidDrawable(icon),
+					RHelper.getAppText(icon),
+					createPendingIntent(icon.replace("ic_media_", "")));
 	}
 
 	private void updateNotification(final Bundle bundle) {
+		Log.d(LCAT, bundle.toString());
 		final String title = bundle.getString("title");
 		final String artist = bundle.getString("artist");
 		final String image = bundle.getString("image");
 
+		final ArrayList<String> icons = bundle.getStringArrayList("icons");
 		if (title != null) {
 			bigTextNotification.setBigContentTitle(title);
 			bigTextNotification.bigText(artist);
@@ -175,21 +173,16 @@ public class NotificationCompactService extends Service {
 			builder.setContentText(artist);
 		}
 
-		if (bundle.getString("state") != null) {
-			final int state = Integer.parseInt(bundle.getString("state"));
-			if (state == AudiocontrolsModule.STATE_PLAYING) {
-				setAudioControlActions("ic_media_pause");
-			}
-			if (state == AudiocontrolsModule.STATE_STOP) {
-				setAudioControlActions("ic_media_play");
-			}
-		}
+		setAudioControlActions(icons);
+
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
 		if (image != null) {
+			Log.d(LCAT, "image != null");
 			final Target target = new Target() {
 				@Override
 				public void onBitmapLoaded(Bitmap bitmap,
 						Picasso.LoadedFrom from) {
+					Log.d(LCAT, "bitMap loaded Bytes=" + bitmap.getRowBytes());
 					builder.setLargeIcon(bitmap);
 					notificationManager
 							.notify(NOTIFICATION_ID, builder.build());
@@ -197,10 +190,12 @@ public class NotificationCompactService extends Service {
 
 				@Override
 				public void onBitmapFailed(Drawable errorDrawable) {
+					Log.e(LCAT, "bitMap failed ");
 				}
 
 				@Override
 				public void onPrepareLoad(Drawable placeHolderDrawable) {
+					Log.d(LCAT, "bitMap prepared");
 				}
 			};
 			Picasso.with(ctx).load(image).into(target);
