@@ -76,8 +76,6 @@ public class NotificationCompactService extends Service {
 
 	@Override
 	public void onCreate() {
-		Log.d(LCAT,
-				"LockscreenService created => new notificationServiceReceiver");
 		notificationServiceReceiver = new NotificationServiceReceiver();
 		// for back communication:*/
 		IntentFilter filter = new IntentFilter();
@@ -99,7 +97,6 @@ public class NotificationCompactService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.d(LCAT, "onStartCommand " + intent.toString());
 		if (builder == null)
 			createNotification(intent.getExtras());
 		if (intent != null && intent.hasExtra("title")) {
@@ -158,7 +155,6 @@ public class NotificationCompactService extends Service {
 	}
 
 	private void updateNotification(final Bundle bundle) {
-		Log.d(LCAT, bundle.toString());
 		final String title = bundle.getString("title");
 		final String artist = bundle.getString("artist");
 		final String image = bundle.getString("image");
@@ -177,12 +173,10 @@ public class NotificationCompactService extends Service {
 
 		notificationManager.notify(NOTIFICATION_ID, builder.build());
 		if (image != null) {
-			Log.d(LCAT, "image != null");
 			final Target target = new Target() {
 				@Override
 				public void onBitmapLoaded(Bitmap bitmap,
 						Picasso.LoadedFrom from) {
-					Log.d(LCAT, "bitMap loaded Bytes=" + bitmap.getRowBytes());
 					builder.setLargeIcon(bitmap);
 					notificationManager
 							.notify(NOTIFICATION_ID, builder.build());
@@ -195,13 +189,12 @@ public class NotificationCompactService extends Service {
 
 				@Override
 				public void onPrepareLoad(Drawable placeHolderDrawable) {
-					Log.d(LCAT, "bitMap prepared");
 				}
 			};
-			Picasso.with(ctx).load(image).into(target);
+			Picasso.with(ctx).load(image).resize(150, 150).into(target);
 
 		} else {
-			Log.i(LCAT, "image is null in updateNotification ");
+			Log.w(LCAT, "image is null in updateNotification ");
 		}
 	}
 
@@ -261,7 +254,6 @@ public class NotificationCompactService extends Service {
 
 	private CharSequence RgetText(String name, String type) {
 		CharSequence bar = "";
-		Log.d(LCAT, "name type " + name + "  " + type);
 		try {
 			int id = ctx.getResources().getIdentifier(name, type, null);
 			bar = ctx.getResources().getText(id);
@@ -269,7 +261,6 @@ public class NotificationCompactService extends Service {
 			Log.e(LCAT, "Resource not found: " + type + "@" + name);
 			return bar;
 		}
-		Log.d(LCAT, "bar=" + bar);
 		return bar;
 	}
 }

@@ -82,7 +82,6 @@ public class AudiocontrolsModule extends KrollModule {
 
 	public AudiocontrolsModule() {
 		super();
-
 		ctx = TiApplication.getInstance().getApplicationContext();
 	}
 
@@ -91,35 +90,9 @@ public class AudiocontrolsModule extends KrollModule {
 
 	}
 
-	public void onPause(Activity activity) {
-		Log.d(LCAT, "onPause");
-		super.onPause(activity);
-	}
-
-	public void onStop(Activity activity) {
-		Log.d(LCAT, "onStop");
-		/*
-		 * TiApplication.getInstance().stopService(lockscreenService);
-		 * Log.d(LCAT, "TiApplication.getInst"); removeRemoteAudioControl();
-		 * Log.d(LCAT, "removeRemoteAudioCon"); if
-		 * (remoteAudioControlEventLister != null) { Log.d(LCAT,
-		 * "terminating remoteAudioControlEventLister");
-		 * ctx.unregisterReceiver(remoteAudioControlEventLister); }
-		 */
-		super.onStop(activity);
-	}
-
-	@Override
-	public void onDestroy(Activity activity) {
-		Log.d(LCAT, "onDestroy");
-		hideRemoteAudioControl();
-		stopNotificationService();
-		// TiApplication.getInstance().stopService(lockscreenService);
-		super.onDestroy(activity);
-	}
-
 	/* read all paramters from JS-side and save into vars in this class */
 	private void getOptions(KrollDict opts) {
+		Log.d(LCAT, "getOptions");
 		if (opts != null && opts instanceof KrollDict) {
 			if (opts.containsKeyAndNotNull("hasActions")) {
 				hasActions = opts.getBoolean("hasActions");
@@ -177,6 +150,14 @@ public class AudiocontrolsModule extends KrollModule {
 	}
 
 	@Kroll.method
+	public void setMiddleButton(String name) {
+		if (icons.length >= 2) {
+			icons[1] = name;
+		}
+		this.updateRemoteAudioControl(null);
+	}
+
+	@Kroll.method
 	public void updateRemoteAudioControl(KrollDict opts) {
 		this.createRemoteAudioControl(opts);
 	}
@@ -201,7 +182,8 @@ public class AudiocontrolsModule extends KrollModule {
 
 	@Kroll.method
 	public void createRemoteAudioControl(KrollDict opts) {
-		getOptions(opts);
+		if (opts != null)
+			getOptions(opts);
 		/* registering of broadcastreceiver for results */
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
@@ -215,7 +197,8 @@ public class AudiocontrolsModule extends KrollModule {
 					intent.putExtra("image", coverimage);
 
 				intent.putExtra("hasActions", hasActions);
-				intent.putExtra("icons", icons);
+				intent.putExtra("icons",
+						new ArrayList<String>(Arrays.asList(icons)));
 				intent.putExtra("hasProgress", hasProgress);
 				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
 				// needed for null case:
@@ -258,7 +241,6 @@ public class AudiocontrolsModule extends KrollModule {
 			ctx.registerReceiver(remoteAudioControlEventLister, filter);
 			Log.d(LCAT, "remoteAudioControlEventLister started");
 		}
-
 	}
 
 	@Kroll.method
@@ -309,6 +291,28 @@ public class AudiocontrolsModule extends KrollModule {
 		}
 	}
 
+	@Override
+	public void onPause(Activity activity) {
+		Log.d(LCAT, "<<<<<<< onPause");
+		super.onPause(activity);
+	}
+
+	@Override
+	public void onStop(Activity activity) {
+		Log.d(LCAT, "<<<<<<<< onStop");
+		// hideRemoteAudioControl();
+		// stopNotificationService();
+		super.onStop(activity);
+	}
+
+	@Override
+	public void onDestroy(Activity activity) {
+		Log.d(LCAT, "onDestroy");
+		hideRemoteAudioControl();
+		stopNotificationService();
+		// TiApplication.getInstance().stopService(lockscreenService);
+		super.onDestroy(activity);
+	}
 	/*
 	 * For testing: adb shell am broadcast -a de.appwerft.audiocontrols.PLAY
 	 */

@@ -2,6 +2,7 @@ package de.appwerft.audiocontrols;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 import android.content.Context;
 import android.content.Intent;
@@ -40,7 +41,6 @@ public class AudioControlWidget extends RelativeLayout {
 	}
 
 	public AudioControlWidget(Context ctx, onFlingListener flingListener) {
-
 		super(ctx);
 		this.flingListener = flingListener;
 		isPlaying = true;
@@ -59,8 +59,6 @@ public class AudioControlWidget extends RelativeLayout {
 				"playcontrol", "id"));
 		this.nextCtrl = (ImageButton) container.findViewById(nextCtrlId = R(
 				"nextcontrol", "id"));
-		this.playIcon = R("android:drawable/ic_media_play", "drawable");
-		this.stopIcon = R("android:drawable/ic_media_pause", "drawable");
 		this.xScale = this.playCtrl.getScaleX();
 		this.yScale = this.playCtrl.getScaleY();
 		/* activating of control buttons: */
@@ -102,34 +100,30 @@ public class AudioControlWidget extends RelativeLayout {
 		final String imageUrl = b.getString("image");
 		final String artist = b.getString("artist");
 		final String title = b.getString("title");
+		final ArrayList<String> icons = b.getStringArrayList("icons");
 
 		if (this.placeholderId > 0 && imageUrl != null) {
 			try {
 				@SuppressWarnings("unused")
 				URL dummy = new URL(imageUrl);
 				Picasso.with(ctx).load(imageUrl).placeholder(placeholderId)
-						.into(this.coverView);
+						.resize(150, 150).into(this.coverView);
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
 
-		} else
-			Log.e(LCAT, "cannot resolve placeholder.png");
+		}
 		if (title != null)
 			this.titleView.setText(title);
 		if (artist != null)
 			this.artistView.setText(artist);
-		if (b.getString("state") != null) {
-			final int state = Integer.parseInt(b.getString("state"));
-			if (state == AudiocontrolsModule.STATE_PLAYING) {
-				this.playCtrl.setImageResource(stopIcon);
-			} else if (state == AudiocontrolsModule.STATE_STOP) {
-				this.playCtrl.setImageResource(playIcon);
-			} else {
-				Log.e(LCAT, "missing symbol");
-			}
-			this.playCtrl.setScaleX(xScale);
-			this.playCtrl.setScaleY(yScale);
+		if (icons != null) {
+			this.prevCtrl.setImageResource(R(icons.get(0), "drawable"));
+			this.playCtrl.setImageResource(R(icons.get(1), "drawable"));
+			this.nextCtrl.setImageResource(R(icons.get(2), "drawable"));
+
+			// this.playCtrl.setScaleX(xScale);
+			// this.playCtrl.setScaleY(yScale);
 		}
 	}
 
