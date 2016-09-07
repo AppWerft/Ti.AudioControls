@@ -9,7 +9,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
 import android.os.ResultReceiver;
@@ -38,7 +37,6 @@ public class LockScreenService extends Service {
 		appProperties = TiApplication.getInstance().getAppProperties();
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -52,23 +50,7 @@ public class LockScreenService extends Service {
 		layoutParamsWidget = this.getLayoutForWidget();
 		layoutParamsCover = this.getLayoutForCover();
 
-		audioControlWidget = new AudioControlWidget(ctx,
-				new AudioControlWidget.onFlingListener() {
-					@Override
-					public void onFlinged(int direction) {
-						if (direction == AudioControlWidget.DIRECTION_DOWN) {
-							layoutParams.gravity = Gravity.BOTTOM;
-							appProperties.setInt("PLAYER_VERTICALPOSITION",
-									Gravity.BOTTOM);
-						} else {
-							layoutParams.gravity = Gravity.TOP;
-							appProperties.setInt("PLAYER_VERTICALPOSITION",
-									Gravity.TOP);
-						}
-						windowManager.updateViewLayout(audioControlWidget,
-								layoutParams);
-					}
-				});
+		audioControlWidget = new AudioControlWidget(ctx, new flingListener());
 		/* Receiver for handling hide/view */
 		lockScreenStateReceiver = new LockScreenStateReceiver();
 		IntentFilter mfilter = new IntentFilter(Intent.ACTION_SCREEN_OFF);
@@ -119,6 +101,20 @@ public class LockScreenService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (intent.hasExtra(AudiocontrolsModule.SERVICE_COMMAND_KEY)) {
+			int rqs = intent.getIntExtra(
+					AudiocontrolsModule.SERVICE_COMMAND_KEY, 0);
+			if (rqs == AudiocontrolsModule.RQS_STOP_SERVICE) {
+				stopSelf();
+			}
+			if (rqs == AudiocontrolsModule.RQS_REMOVE_NOTIFICATION) {
+				shouldVisible = false;
+				if (isShowing) {
+					windowManager.removeView(audioControlWidget);
+					isShowing = false;
+				}
+			}
+		}
 		if (intent != null) {
 			audioControlWidget.updateContent(intent.getExtras());
 		}
@@ -128,6 +124,21 @@ public class LockScreenService extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
+	}
+
+	private final class MyFlingListener implements
+			AudioControlWidget.onFlingListener {
+		@Override
+		public void onFlinged(int direction) {
+			if (direction == AudioControlWidget.DIRECTION_DOWN) {
+				layoutParams.gravity = Gravity.BOTTOM;
+				appProperties.setInt("PLAYER_VERTICALPOSITION", Gravity.BOTTOM);
+			} else {
+				layoutParams.gravity = Gravity.TOP;
+				appProperties.setInt("PLAYER_VERTICALPOSITION", Gravity.TOP);
+			}
+			windowManager.updateViewLayout(audioControlWidget, layoutParams);
+		}
 	}
 
 	public class LockScreenStateReceiver extends BroadcastReceiver {

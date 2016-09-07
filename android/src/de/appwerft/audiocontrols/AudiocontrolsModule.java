@@ -168,7 +168,10 @@ public class AudiocontrolsModule extends KrollModule {
 		Intent intent = new Intent(ctx.getPackageName());
 		intent.setAction(ACTION);
 		intent.putExtra(SERVICE_COMMAND_KEY, RQS_REMOVE_NOTIFICATION);
-		ctx.sendBroadcast(intent);
+		// maybe the service is not running, and in this case it will not work:
+		// ctx.sendBroadcast(intent);
+		// for this we call service again:
+		callServices(ACTION, SERVICE_COMMAND_KEY, RQS_REMOVE_NOTIFICATION);
 		Log.d(LCAT, "intent for hiding control sent. " + intent.toString());
 	}
 
@@ -176,19 +179,21 @@ public class AudiocontrolsModule extends KrollModule {
 		Intent intent = new Intent(ctx.getPackageName());
 		intent.setAction(ACTION);
 		intent.putExtra(SERVICE_COMMAND_KEY, RQS_STOP_SERVICE);
-		ctx.sendBroadcast(intent);
+		// ctx.sendBroadcast(intent);
 		Log.d(LCAT, "RQS_STOP_SERVICE sent");
+		callServices(ACTION, SERVICE_COMMAND_KEY, RQS_STOP_SERVICE);
 	}
 
-	@Kroll.method
-	public void createRemoteAudioControl(KrollDict opts) {
-		if (opts != null)
-			getOptions(opts);
+	private void callServices(String action, String extrakey, int extravalue) {
 		/* registering of broadcastreceiver for results */
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
 			try {
 				/* starting of service for lock screen */
 				Intent intent = new Intent(ctx, LockScreenService.class);
+				if (action != null) {
+					intent.setAction(action);
+					intent.putExtra(extrakey, extrakey);
+				}
 				if (title != null)
 					intent.putExtra("title", title);
 				if (artist != null)
@@ -203,7 +208,7 @@ public class AudiocontrolsModule extends KrollModule {
 				intent.putExtra("iconBackgroundColor", iconBackgroundColor);
 				// needed for null case:
 				intent.putExtra("state", Integer.toString(state));
-				ctx.startService(intent);
+
 				/* and start of receiver for buttons */
 
 			} catch (Exception ex) {
@@ -215,6 +220,10 @@ public class AudiocontrolsModule extends KrollModule {
 			Log.d(LCAT, "new device or forced notification:");
 			/* starting of service for it */
 			Intent intent = new Intent(ctx, NotificationCompactService.class);
+			if (action != null) {
+				intent.setAction(action);
+				intent.putExtra(extrakey, extravalue);
+			}
 			if (title != null)
 				intent.putExtra("title", title);
 			if (artist != null)
@@ -234,7 +243,14 @@ public class AudiocontrolsModule extends KrollModule {
 		} catch (Exception ex) {
 			Log.e(LCAT, "Exception caught:" + ex);
 		}
-		/* in all API levels: */
+
+	}
+
+	@Kroll.method
+	public void createRemoteAudioControl(KrollDict opts) {
+		if (opts != null)
+			getOptions(opts);
+		callServices(null, null, 0);
 		if (remoteAudioControlEventLister == null) {
 			remoteAudioControlEventLister = new RemoteAudioControlEventLister();
 			IntentFilter filter = new IntentFilter(ctx.getPackageName());

@@ -23,22 +23,36 @@ The module has 3 functionalities:
 ##Interface
 
 ```javascript
-var AudioControlModule = require("de.appwerft.audiocontrol");
-var LoremIpsum = require("libs/loremipsum");
-
-// audioControl is singleton, therefore we use module for it:
 var AudioControls = require("de.appwerft.audiocontrols");
-    AudioControls.createRemoteAudioControl({
-        onKeypressed : function(_event) {
-            console.log(_event);
-            AudioControls.updateRemoteAudioControl({
-                image : "http://lorempixel.com/120/120/cats" + "?_=" + Math.random(),
-                artist : LoremIpsum(10),
-                title : LoremIpsum(2)
-            });
-        },
-        lollipop : AudioControls.WIDGET_LOCKSCREEN,
+var icons = [AudioControls.ICON_REWIND, AudioControls.ICON_PAUSE, AudioControls.ICON_FORWARD];
+var updateControl = function() {
+    AudioControls.updateRemoteAudioControl({
+        image : "http://lorempixel.com/1500/1500/cats/" + "?" + new Date().getTime(),
+        artist : Lorem(12),
+        title : Lorem(4),
+        icons : icons
+    });
+};
+var playing = false;
+AudioControls.createRemoteAudioControl({
+    onClick : function(_event) {
+        icons[1] = (icons[1] == AudioControls.ICON_PAUSE) ? AudioControls.ICON_PLAY : AudioControls.ICON_PAUSE;
+        updateControl();
+        playing = !playing;
+        if (_event.cmd == "rew") {
+            AudioControls.hideRemoteAudioControl();
+            setTimeout(function() {
+            }, 3000);
+        }
+    },
+    vibrate : 26,
+    title : Lorem(3),
+    image : "http://lorempixel.com/250/250/cats/" + "?" + new Date().getTime(),
+    artist : Lorem(5),
+    icons : [AudioControls.ICON_REWIND, AudioControls.ICON_PAUSE, AudioControls.ICON_FORWARD],
+    iconBackgroundColor : "#44aaaa"
 });
+
 ```
 
 Your manifest needs to entries:

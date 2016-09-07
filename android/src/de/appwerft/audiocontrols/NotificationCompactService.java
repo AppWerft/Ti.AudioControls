@@ -97,6 +97,25 @@ public class NotificationCompactService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		String action = intent.getAction();
+		if (action != null && action.equals(AudiocontrolsModule.ACTION)) {
+			Log.d(LCAT, "ACTION from module received");
+			if (intent.hasExtra(AudiocontrolsModule.SERVICE_COMMAND_KEY)) {
+				int rqs = intent.getIntExtra(
+						AudiocontrolsModule.SERVICE_COMMAND_KEY, 0);
+				if (rqs == AudiocontrolsModule.RQS_STOP_SERVICE) {
+					Log.d(LCAT, "STOP_SERVICE_BROADCAST_KEY received");
+					((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+							.cancelAll();
+					stopSelf();
+				}
+				if (rqs == AudiocontrolsModule.RQS_REMOVE_NOTIFICATION) {
+					notificationManager.cancel(NOTIFICATION_ID);
+				}
+			} else
+				Log.w(LCAT, "Action without extras");
+			return START_STICKY;
+		}
 		if (builder == null)
 			createNotification(intent.getExtras());
 		if (intent != null && intent.hasExtra("title")) {
@@ -110,8 +129,8 @@ public class NotificationCompactService extends Service {
 		final boolean hasActions = bundle.getBoolean("hasActions");
 		final int iconBackgroundColor = bundle.getInt("iconBackgroundColor");
 		final String title = bundle.getString("title");
-		final String artist = bundle.getString("artist");
-		ArrayList<String> icons = bundle.getStringArrayList("icons");
+		// final String artist = bundle.getString("artist");
+		// ArrayList<String> icons = bundle.getStringArrayList("icons");
 		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		builder = new NotificationCompat.Builder(ctx);
