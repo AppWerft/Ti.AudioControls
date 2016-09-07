@@ -58,8 +58,9 @@ AudioControls.createRemoteAudioControl({
 Your manifest needs to entries:
 
 ```xml
-<service android:name=".LockScreenService" android:enabled="true" android:exported="true"/>
-<service android:name=".NotificationService" android:enabled="true" android:exported="true"/>
+<service android:name="de.appwerft.audiocontrols.LockScreenService" android:enabled="true" android:exported="true"/>
+<service android:name="de.appwerft.audiocontrols.NotificationCompactService" android:enabled="true" android:exported="true"/>
+
 ```
 
 <img src="https://raw.githubusercontent.com/AppWerft/Ti.AudioControls/master/assets/lsr.png" width="600">
