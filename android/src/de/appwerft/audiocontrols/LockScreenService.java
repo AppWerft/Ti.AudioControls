@@ -126,7 +126,7 @@ public class LockScreenService extends Service {
 		return null;
 	}
 
-	private final class MyFlingListener implements
+	private final class flingListener implements
 			AudioControlWidget.onFlingListener {
 		@Override
 		public void onFlinged(int direction) {

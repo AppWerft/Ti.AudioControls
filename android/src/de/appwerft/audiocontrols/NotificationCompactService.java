@@ -9,6 +9,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -149,6 +150,20 @@ public class NotificationCompactService extends Service {
 			builder.setStyle(bigTextNotification);
 			// setAudioControlActions("ic_media_play");
 		}
+		String pn = TiApplication.getInstance().getPackageName();
+
+		ComponentName componentName = new ComponentName(ctx.getPackageName(),
+				TiApplication.getAppRootOrCurrentActivity().getLocalClassName());
+
+		// notifyIntent.setPackage(packageName);
+		Intent notifyIntent = new Intent();
+		notifyIntent.setComponent(componentName);
+		notifyIntent.setAction(Intent.ACTION_MAIN);
+
+		PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0,
+				notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		builder.setContentIntent(pendingIntent);
+
 		if (title != null)
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 
