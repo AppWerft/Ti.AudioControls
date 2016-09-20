@@ -16,6 +16,7 @@ import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.ResultReceiver;
@@ -130,14 +131,31 @@ public class NotificationCompactService extends Service {
 		final boolean hasActions = bundle.getBoolean("hasActions");
 		final int iconBackgroundColor = bundle.getInt("iconBackgroundColor");
 		final String title = bundle.getString("title");
-		// final String artist = bundle.getString("artist");
-		// ArrayList<String> icons = bundle.getStringArrayList("icons");
-		// http://stackoverflow.com/questions/22789588/how-to-update-notification-with-remoteviews
 		notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		/* Preparing click on notification: */
+
+		/*
+		 * intent://video/XYZ#Intent;scheme=<APPNAME>;package=<APPID>;launchFlags
+		 * =<flags>;end;
+		 */
+
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+		intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
+				| Intent.FLAG_ACTIVITY_NEW_TASK);
+		String packageName = TiApplication.getInstance().getPackageName();
+		String className = packageName
+				+ "."
+				+ TiApplication.getAppRootOrCurrentActivity()
+						.getLocalClassName();
+		Log.d(LCAT, "className=" + className);
+		intent.setComponent(new ComponentName(packageName, className));
+		intent.putExtra("audioId", "0815");
+		PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 1, intent,
+				PendingIntent.FLAG_UPDATE_CURRENT);
 		builder = new NotificationCompat.Builder(ctx);
 		builder.setSmallIcon(R("notification_icon", "drawable"))
 				.setAutoCancel(false).setOngoing(true)
-				.setColor(iconBackgroundColor)
+				.setColor(iconBackgroundColor).setContentIntent(pendingIntent)
 				.setPriority(NotificationCompat.PRIORITY_HIGH)
 				.setContentTitle("").setContentText("");
 		if (hasProgress) {
@@ -150,20 +168,6 @@ public class NotificationCompactService extends Service {
 			builder.setStyle(bigTextNotification);
 			// setAudioControlActions("ic_media_play");
 		}
-		String pn = TiApplication.getInstance().getPackageName();
-
-		ComponentName componentName = new ComponentName(ctx.getPackageName(),
-				TiApplication.getAppRootOrCurrentActivity().getLocalClassName());
-
-		// notifyIntent.setPackage(packageName);
-		Intent notifyIntent = new Intent();
-		notifyIntent.setComponent(componentName);
-		notifyIntent.setAction(Intent.ACTION_MAIN);
-
-		PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0,
-				notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-		builder.setContentIntent(pendingIntent);
-
 		if (title != null)
 			notificationManager.notify(NOTIFICATION_ID, builder.build());
 

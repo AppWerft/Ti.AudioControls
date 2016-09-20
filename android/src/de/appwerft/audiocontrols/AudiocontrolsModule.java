@@ -165,8 +165,6 @@ public class AudiocontrolsModule extends KrollModule {
 	@Kroll.method
 	public void hideRemoteAudioControl() {
 		Log.d(LCAT, "intent for hiding control will send. ");
-		ComponentName component = new ComponentName(ctx.getPackageName(),HeadphoneButtonReceiver.class.getName());
-		
 		Intent intent = new Intent(ctx.getPackageName());
 		intent.setAction(ACTION);
 		intent.putExtra(SERVICE_COMMAND_KEY, RQS_REMOVE_NOTIFICATION);

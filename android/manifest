@@ -7,7 +7,7 @@ apiversion: 2
 architectures: armeabi armeabi-v7a x86
 description: Audiocontrols: control of audioplayer by lockscreen, notificationbar and headset keyboard
 author: Rainer Schleevoigt
-license: Specify your license
+license: my special licence, all is forbidden!
 copyright: Copyright (c) 2016 by 
 
 # these should not be edited
